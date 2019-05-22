@@ -18,6 +18,8 @@ package org.apache.dubbo.common;
 
 /**
  * Node. (API/SPI, Prototype, ThreadSafe)
+ * dubbo中很多的对象都能理解成一个节点的意思，其中提供了URL保存
+ * 配置参数的能力
  */
 public interface Node {
 

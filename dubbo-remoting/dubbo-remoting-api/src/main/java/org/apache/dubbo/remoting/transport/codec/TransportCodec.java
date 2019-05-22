@@ -32,6 +32,7 @@ import java.io.OutputStream;
 
 /**
  * TransportCodec
+ * 传输编码协议
  */
 public class TransportCodec extends AbstractCodec {
 
@@ -46,9 +47,14 @@ public class TransportCodec extends AbstractCodec {
         }
     }
 
+    /**
+     * 对消息进行解码
+     * @see org.apache.dubbo.remoting.transport.netty4.NettyCodecAdapter.InternalDecoder
+     */
     @Override
     public Object decode(Channel channel, ChannelBuffer buffer) throws IOException {
         InputStream input = new ChannelBufferInputStream(buffer);
+        //获取序列化器
         ObjectInput objectInput = getSerialization(channel).deserialize(channel.getUrl(), input);
         Object object = decodeData(channel, objectInput);
         if (objectInput instanceof Cleanable) {

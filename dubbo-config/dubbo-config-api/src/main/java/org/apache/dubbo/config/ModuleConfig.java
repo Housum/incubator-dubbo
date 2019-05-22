@@ -27,6 +27,9 @@ import java.util.List;
 /**
  * The module info
  *
+ * 形如 <dubbo:module></>
+ * @link http://dubbo.apache.org/zh-cn/docs/user/references/xml/dubbo-module.html
+ *
  * @export
  */
 public class ModuleConfig extends AbstractConfig {

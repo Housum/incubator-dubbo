@@ -50,6 +50,7 @@ public abstract class AbstractClient extends AbstractEndpoint implements Client 
     public AbstractClient(URL url, ChannelHandler handler) throws RemotingException {
         super(url, handler);
 
+        //是否能够重连
         needReconnect = url.getParameter(Constants.SEND_RECONNECT_KEY, false);
 
         try {
@@ -89,6 +90,7 @@ public abstract class AbstractClient extends AbstractEndpoint implements Client 
 
     protected static ChannelHandler wrapChannelHandler(URL url, ChannelHandler handler) {
         url = ExecutorUtil.setThreadName(url, CLIENT_THREAD_POOL_NAME);
+        //设置线程池的类型
         url = url.addParameterIfAbsent(Constants.THREADPOOL_KEY, Constants.DEFAULT_CLIENT_THREADPOOL);
         return ChannelHandlers.wrap(handler, url);
     }
@@ -162,6 +164,8 @@ public abstract class AbstractClient extends AbstractEndpoint implements Client 
 
     @Override
     public void send(Object message, boolean sent) throws RemotingException {
+
+        //如果需要连接的话
         if (needReconnect && !isConnected()) {
             connect();
         }

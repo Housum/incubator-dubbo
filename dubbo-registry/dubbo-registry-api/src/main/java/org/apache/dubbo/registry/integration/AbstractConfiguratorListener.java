@@ -31,6 +31,8 @@ import java.util.List;
 
 /**
  * AbstractConfiguratorListener
+ * 配置的监控器 能够监听到动态配置的修改 如果配置了config-center的话
+ *
  */
 public abstract class AbstractConfiguratorListener implements ConfigurationListener {
     private static final Logger logger = LoggerFactory.getLogger(AbstractConfiguratorListener.class);
@@ -38,10 +40,18 @@ public abstract class AbstractConfiguratorListener implements ConfigurationListe
     protected List<Configurator> configurators = Collections.emptyList();
 
 
+    /**
+     * @param key 监听的配置名
+     */
     protected final void initWith(String key) {
+        //监听配置的修改
+        //org.apache.dubbo.configcenter.support.zookeeper.CacheListener.dataChanged
         DynamicConfiguration dynamicConfiguration = DynamicConfiguration.getDynamicConfiguration();
+        //具体的地址为: /dubbo/config/"key"(key中"."替换为"/")
         dynamicConfiguration.addListener(key, this);
+        //如果配置中心存在这个配置的话 那么获取配置
         String rawConfig = dynamicConfiguration.getConfig(key);
+        //如果初始化的时候 就有值的话 那么直接触发
         if (!StringUtils.isEmpty(rawConfig)) {
             process(new ConfigChangeEvent(key, rawConfig));
         }

@@ -39,7 +39,7 @@ import java.util.List;
 
 /**
  * DubboRegistryFactory
- *
+ * dubbo注册中心
  */
 public class DubboRegistryFactory extends AbstractRegistryFactory {
 
@@ -81,6 +81,7 @@ public class DubboRegistryFactory extends AbstractRegistryFactory {
 
     @Override
     public Registry createRegistry(URL url) {
+
         url = getRegistryURL(url);
         List<URL> urls = new ArrayList<>();
         urls.add(url.removeParameter(Constants.BACKUP_KEY));
@@ -92,12 +93,17 @@ public class DubboRegistryFactory extends AbstractRegistryFactory {
             }
         }
         RegistryDirectory<RegistryService> directory = new RegistryDirectory<>(RegistryService.class, url.addParameter(Constants.INTERFACE_KEY, RegistryService.class.getName()).addParameterAndEncoded(Constants.REFER_KEY, url.toParameterString()));
+        //在调用registryInvoker的invoke的时候将会调用directory的list
         Invoker<RegistryService> registryInvoker = cluster.join(directory);
+        //这些方法调用的都是registryInvoker的方法
         RegistryService registryService = proxyFactory.getProxy(registryInvoker);
+
         DubboRegistry registry = new DubboRegistry(registryInvoker, registryService);
         directory.setRegistry(registry);
         directory.setProtocol(protocol);
         directory.setRouterChain(RouterChain.buildChain(url));
+        //如果这其中有服务提供者的话 那么将就从其中调用 否则的话 没有提供者
+        //这里需要看懂的一点是先notify 然后再subscribe。 TODO 这部分设计那么复杂的意义？
         directory.notify(urls);
         directory.subscribe(new URL(Constants.CONSUMER_PROTOCOL, NetUtils.getLocalHost(), 0, RegistryService.class.getName(), url.getParameters()));
         return registry;

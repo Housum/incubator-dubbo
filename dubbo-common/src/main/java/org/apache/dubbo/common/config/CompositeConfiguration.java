@@ -31,6 +31,7 @@ public class CompositeConfiguration implements Configuration {
 
     /**
      * List holding all the configuration
+     * 注意这里 配置是有优先级的
      */
     private List<Configuration> configList = new LinkedList<Configuration>();
 

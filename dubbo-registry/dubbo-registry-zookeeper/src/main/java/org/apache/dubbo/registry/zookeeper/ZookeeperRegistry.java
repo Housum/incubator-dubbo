@@ -98,6 +98,7 @@ public class ZookeeperRegistry extends FailbackRegistry {
     @Override
     public void doRegister(URL url) {
         try {
+            //toUrlPath(url) = /root/interfaces/providers eg:/dubbo/org.apache.dubbo.demo.DemoService/providers
             zkClient.create(toUrlPath(url), url.getParameter(Constants.DYNAMIC_KEY, true));
         } catch (Throwable e) {
             throw new RpcException("Failed to register " + url + " to zookeeper " + getUrl() + ", cause: " + e.getMessage(), e);
@@ -117,6 +118,7 @@ public class ZookeeperRegistry extends FailbackRegistry {
     public void doSubscribe(final URL url, final NotifyListener listener) {
         try {
             if (Constants.ANY_VALUE.equals(url.getServiceInterface())) {
+                // /dubbo
                 String root = toRootPath();
                 ConcurrentMap<NotifyListener, ChildListener> listeners = zkListeners.get(url);
                 if (listeners == null) {
@@ -125,6 +127,8 @@ public class ZookeeperRegistry extends FailbackRegistry {
                 }
                 ChildListener zkListener = listeners.get(listener);
                 if (zkListener == null) {
+                    //对NotifyListener对应的新建一个ChildListener,对于ChildListener触发
+                    //的修改由NotifyListener进行通知
                     listeners.putIfAbsent(listener, (parentPath, currentChilds) -> {
                         for (String child : currentChilds) {
                             child = URL.decode(child);
@@ -137,9 +141,12 @@ public class ZookeeperRegistry extends FailbackRegistry {
                     });
                     zkListener = listeners.get(listener);
                 }
+                //确保有目录
                 zkClient.create(root, false);
+                //这里将会监听dubbo的子目录
                 List<String> services = zkClient.addChildListener(root, zkListener);
                 if (CollectionUtils.isNotEmpty(services)) {
+                    //根目录下面的服务将会分开去监听 见NotifyListener 约束3
                     for (String service : services) {
                         service = URL.decode(service);
                         anyServices.add(service);
@@ -149,23 +156,31 @@ public class ZookeeperRegistry extends FailbackRegistry {
                 }
             } else {
                 List<URL> urls = new ArrayList<>();
+                //获取需要监听的路径
                 for (String path : toCategoriesPath(url)) {
                     ConcurrentMap<NotifyListener, ChildListener> listeners = zkListeners.get(url);
                     if (listeners == null) {
                         zkListeners.putIfAbsent(url, new ConcurrentHashMap<>());
                         listeners = zkListeners.get(url);
                     }
+                    //找到notifyListener映射的ChildListener
                     ChildListener zkListener = listeners.get(listener);
                     if (zkListener == null) {
-                        listeners.putIfAbsent(listener, (parentPath, currentChilds) -> ZookeeperRegistry.this.notify(url, listener, toUrlsWithEmpty(url, parentPath, currentChilds)));
+                        //创建路径的监听器
+                        listeners.putIfAbsent(listener,
+                                //如果子节点变化了 那么被触发
+                                (parentPath, currentChilds) -> ZookeeperRegistry.this.notify(url, listener, toUrlsWithEmpty(url, parentPath, currentChilds)));
                         zkListener = listeners.get(listener);
                     }
                     zkClient.create(path, false);
+                    //对路径的子节点进行监听 并且将子节点返回 
                     List<String> children = zkClient.addChildListener(path, zkListener);
                     if (children != null) {
+                        //urls是节点下面所有的子节点 见NotifyListener 的约束2
                         urls.addAll(toUrlsWithEmpty(url, path, children));
                     }
                 }
+                //在初始化之后 将会触发一次事件
                 notify(url, listener, urls);
             }
         } catch (Throwable e) {
@@ -222,6 +237,8 @@ public class ZookeeperRegistry extends FailbackRegistry {
     }
 
     private String toServicePath(URL url) {
+
+        //如果接口名不是* 那么返回的是dubbo/service-interface
         String name = url.getServiceInterface();
         if (Constants.ANY_VALUE.equals(name)) {
             return toRootPath();
@@ -232,9 +249,11 @@ public class ZookeeperRegistry extends FailbackRegistry {
     private String[] toCategoriesPath(URL url) {
         String[] categories;
         if (Constants.ANY_VALUE.equals(url.getParameter(Constants.CATEGORY_KEY))) {
+            //  dubbo/service/providers, dubbo/service/consumers, dubbo/service/routers,dubbo/service/configurators
             categories = new String[]{Constants.PROVIDERS_CATEGORY, Constants.CONSUMERS_CATEGORY,
                     Constants.ROUTERS_CATEGORY, Constants.CONFIGURATORS_CATEGORY};
         } else {
+            //dubbo/service/providers,
             categories = url.getParameter(Constants.CATEGORY_KEY, new String[]{Constants.DEFAULT_CATEGORY});
         }
         String[] paths = new String[categories.length];
@@ -268,6 +287,9 @@ public class ZookeeperRegistry extends FailbackRegistry {
         return urls;
     }
 
+
+
+    //如果提供者为空 那么需要一个空的URL,详情见 NotifyListener约束4
     private List<URL> toUrlsWithEmpty(URL consumer, String path, List<String> providers) {
         List<URL> urls = toUrlsWithoutEmpty(consumer, providers);
         if (urls == null || urls.isEmpty()) {

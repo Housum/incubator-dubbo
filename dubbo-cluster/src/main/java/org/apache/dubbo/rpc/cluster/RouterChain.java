@@ -29,6 +29,8 @@ import java.util.stream.Collectors;
 
 /**
  * Router chain
+ *
+ * 路由链
  */
 public class RouterChain<T> {
 

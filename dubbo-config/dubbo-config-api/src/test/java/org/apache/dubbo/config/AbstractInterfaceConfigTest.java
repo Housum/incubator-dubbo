@@ -125,8 +125,14 @@ public class AbstractInterfaceConfigTest {
 
     @Test
     public void testLoadRegistries() {
+        //dubbo.registry.address 地址
         System.setProperty("dubbo.registry.address", "addr1");
         InterfaceConfig interfaceConfig = new InterfaceConfig();
+        ApplicationConfig applicationConfig  = new ApplicationConfig();
+        applicationConfig.setName("test-app");
+        applicationConfig.setOwner("qibao");
+        applicationConfig.setOrganization("qibao-organ");
+        interfaceConfig.setApplication(applicationConfig);
         // FIXME: now we need to check first, then load
         interfaceConfig.checkRegistry();
         List<URL> urls = interfaceConfig.loadRegistries(true);
@@ -139,6 +145,7 @@ public class AbstractInterfaceConfigTest {
         Assertions.assertTrue(url.getParameters().containsKey("pid"));
         Assertions.assertTrue(url.getParameters().containsKey("registry"));
         Assertions.assertTrue(url.getParameters().containsKey("dubbo"));
+        Assertions.assertTrue(url.getParameters().containsKey("owner"));
     }
 
     @Test

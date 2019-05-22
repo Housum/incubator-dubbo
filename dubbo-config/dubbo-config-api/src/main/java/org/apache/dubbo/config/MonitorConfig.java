@@ -24,6 +24,8 @@ import java.util.Map;
 /**
  * MonitorConfig
  *
+ *  形如 <dubbo:monitor></dubbo:monitor>
+ * @link http://dubbo.apache.org/zh-cn/docs/user/references/xml/dubbo-monitor.html
  * @export
  */
 public class MonitorConfig extends AbstractConfig {

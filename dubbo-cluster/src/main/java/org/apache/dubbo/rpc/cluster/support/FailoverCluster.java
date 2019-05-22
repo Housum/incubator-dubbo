@@ -23,7 +23,6 @@ import org.apache.dubbo.rpc.cluster.Directory;
 
 /**
  * {@link FailoverClusterInvoker}
- *
  */
 public class FailoverCluster implements Cluster {
 
@@ -31,6 +30,7 @@ public class FailoverCluster implements Cluster {
 
     @Override
     public <T> Invoker<T> join(Directory<T> directory) throws RpcException {
+        //返回了Invoker 在外部看起来和其他的Invoker是相同的,但是其中做的都是集群的工作
         return new FailoverClusterInvoker<T>(directory);
     }
 

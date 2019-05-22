@@ -38,12 +38,16 @@ public class AdaptiveExtensionFactory implements ExtensionFactory {
         for (String name : loader.getSupportedExtensions()) {
             list.add(loader.getExtension(name));
         }
+        //这里是除了Adaptive注解的扩展点，包含了其他的所有SPI扩展点
         factories = Collections.unmodifiableList(list);
     }
 
     @Override
     public <T> T getExtension(Class<T> type, String name) {
         for (ExtensionFactory factory : factories) {
+            //遍历ExtensionFactory 获取扩展点
+            //@see spi=org.apache.dubbo.common.extension.factory.SpiExtensionFactory
+            //@see org.apache.dubbo.config.spring.extension.SpringExtensionFactory
             T extension = factory.getExtension(type, name);
             if (extension != null) {
                 return extension;

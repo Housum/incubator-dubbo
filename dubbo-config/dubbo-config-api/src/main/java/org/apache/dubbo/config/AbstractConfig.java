@@ -132,6 +132,10 @@ public abstract class AbstractConfig implements Serializable {
         return value;
     }
 
+    /**
+     * 如果Bean是以"Config", "Bean"结尾的话,那么以该Bean去掉后缀作为tag
+     * 否则的话 以脱驼峰法拆解开来 用"-"拼接  比如： BeanService => bean-service
+     */
     private static String getTagName(Class<?> cls) {
         String tag = cls.getSimpleName();
         for (String suffix : SUFFIXES) {
@@ -147,26 +151,37 @@ public abstract class AbstractConfig implements Serializable {
         appendParameters(parameters, config, null);
     }
 
+    /**
+     * 将config的配置抽取出来放入到map中，如果prefix存在的话 那么属性被抽出来之后的key
+     * 将加上该前缀
+     */
     @SuppressWarnings("unchecked")
     protected static void appendParameters(Map<String, String> parameters, Object config, String prefix) {
         if (config == null) {
             return;
         }
         Method[] methods = config.getClass().getMethods();
+
+        //如果配置中的getter使用了Parameter注解的话 如果excluded为false 的是那么这里将会从配置文件将
+        //从配置类中取出来
         for (Method method : methods) {
             try {
                 String name = method.getName();
                 if (ClassHelper.isGetter(method)) {
                     Parameter parameter = method.getAnnotation(Parameter.class);
+                    //几种不被使用的情况排除掉
                     if (method.getReturnType() == Object.class || parameter != null && parameter.excluded()) {
                         continue;
                     }
                     String key;
+                    //如果指定了key
                     if (parameter != null && parameter.key().length() > 0) {
                         key = parameter.key();
                     } else {
+                        //将属性作为属性的key
                         key = calculatePropertyFromGetter(name);
                     }
+                    //获取配置的值
                     Object value = method.invoke(config);
                     String str = String.valueOf(value).trim();
                     if (value != null && str.length() > 0) {
@@ -191,6 +206,7 @@ public abstract class AbstractConfig implements Serializable {
                         throw new IllegalStateException(config.getClass().getSimpleName() + "." + key + " == null");
                     }
                 } else if ("getParameters".equals(name)
+                        //将配置的map参数都获取到
                         && Modifier.isPublic(method.getModifiers())
                         && method.getParameterTypes().length == 0
                         && method.getReturnType() == Map.class) {
@@ -245,6 +261,9 @@ public abstract class AbstractConfig implements Serializable {
         }
     }
 
+    /**
+     * 构建异步的时候的回调方法信息
+     */
     protected static ConsumerMethodModel.AsyncMethodInfo convertMethodConfig2AyncInfo(MethodConfig methodConfig) {
         if (methodConfig == null || (methodConfig.getOninvoke() == null && methodConfig.getOnreturn() == null && methodConfig.getOnthrow() == null)) {
             return null;
@@ -408,6 +427,7 @@ public abstract class AbstractConfig implements Serializable {
     }
 
     private static String calculatePropertyFromGetter(String name) {
+        //是get或者是is
         int i = name.startsWith("get") ? 3 : 2;
         return StringUtils.camelToSplitName(name.substring(i, i + 1).toLowerCase() + name.substring(i + 1), ".");
     }
@@ -538,16 +558,27 @@ public abstract class AbstractConfig implements Serializable {
     /**
      * TODO: Currently, only support overriding of properties explicitly defined in Config class, doesn't support
      * overriding of customized parameters stored in 'parameters'.
+     * <p>
+     * 刷新当前的配置 从其他的配置中获取到信息 赋值给当前的配置，比如 注册中心 既可以在
+     * serviceConfig和referenceConfig中配置 也可以在provider和consumer中配置。 这一步就是将这种情况的配置给
+     * 补全
      */
     public void refresh() {
         try {
             CompositeConfiguration compositeConfiguration = Environment.getInstance().getConfiguration(getPrefix(), getId());
             InmemoryConfiguration config = new InmemoryConfiguration(getPrefix(), getId());
+
+            //这里就是将当前的类的配置全部给抽取出来 放入到Environment中(ApplicationConfig，ServiceConfig等)
+            //存储的key为:Parameter
             config.addProperties(getMetaData());
+
+            //如果是配置中心为false 那么依赖的配置顺序为:
+            //@see org.apache.dubbo.common.config.Environment
             if (Environment.getInstance().isConfigCenterFirst()) {
                 // The sequence would be: SystemConfiguration -> AppExternalConfiguration -> ExternalConfiguration -> AbstractConfig -> PropertiesConfiguration
                 compositeConfiguration.addConfiguration(3, config);
             } else {
+                //如果不是的话
                 // The sequence would be: SystemConfiguration -> AbstractConfig -> AppExternalConfiguration -> ExternalConfiguration -> PropertiesConfiguration
                 compositeConfiguration.addConfiguration(1, config);
             }
@@ -557,6 +588,7 @@ public abstract class AbstractConfig implements Serializable {
             for (Method method : methods) {
                 if (ClassHelper.isSetter(method)) {
                     try {
+                        //将值重新设置到方法中去
                         String value = StringUtils.trim(compositeConfiguration.getString(extractPropertyName(getClass(), method)));
                         // isTypeMatch() is called to avoid duplicate and incorrect update, for example, we have two 'setGeneric' methods in ReferenceConfig.
                         if (StringUtils.isNotEmpty(value) && ClassHelper.isTypeMatch(method.getParameterTypes()[0], value)) {

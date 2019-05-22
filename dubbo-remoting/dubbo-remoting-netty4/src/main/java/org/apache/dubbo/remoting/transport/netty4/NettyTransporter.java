@@ -23,6 +23,9 @@ import org.apache.dubbo.remoting.RemotingException;
 import org.apache.dubbo.remoting.Server;
 import org.apache.dubbo.remoting.Transporter;
 
+/**
+ * transport层 负责传输
+ */
 public class NettyTransporter implements Transporter {
 
     public static final String NAME = "netty";

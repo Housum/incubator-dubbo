@@ -31,6 +31,9 @@ import java.util.Set;
  */
 public abstract class AbstractConfigurator implements Configurator {
 
+
+    //可以这么理解 该configuratorUrl就是为了给指定的URL进行配置的
+    //见 org.apache.dubbo.rpc.cluster.configurator.AbstractConfigurator.configure
     private final URL configuratorUrl;
 
     public AbstractConfigurator(URL url) {
@@ -92,6 +95,11 @@ public abstract class AbstractConfigurator implements Configurator {
         return url;
     }
 
+    /**
+     *
+     * @param host 当前需要配置的URL的主机
+     * @param url 需要将configuratorUrl上的配置配置到到URL中
+     */
     private URL configureIfMatch(String host, URL url) {
         if (Constants.ANYHOST_VALUE.equals(configuratorUrl.getHost()) || host.equals(configuratorUrl.getHost())) {
             // TODO, to support wildcards

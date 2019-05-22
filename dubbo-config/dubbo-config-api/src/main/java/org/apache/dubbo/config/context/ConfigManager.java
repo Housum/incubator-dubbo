@@ -70,6 +70,8 @@ import static org.apache.dubbo.common.Constants.DEFAULT_KEY;
  * the properties here are currently only used for duplication check but are still not being used in the export/refer process yet.
  * Maybe we can remove the property definition in ReferenceConfig/ServiceConfig and only keep the setXxxConfig() as an entrance.
  * All workflow internally can rely on ConfigManager.
+ *
+ * 配置管理中心 对于在dubbo中存在的配置 在这里都有一份
  */
 public class ConfigManager {
     private static final Logger logger = LoggerFactory.getLogger(ConfigManager.class);
@@ -130,6 +132,7 @@ public class ConfigManager {
         return Optional.ofNullable(configCenter);
     }
 
+    //设置配置中心
     public void setConfigCenter(ConfigCenterConfig configCenter) {
         if (configCenter != null) {
             checkDuplicate(this.configCenter, configCenter);

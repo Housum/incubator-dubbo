@@ -23,12 +23,15 @@ import org.apache.dubbo.common.extension.SPI;
 /**
  * RegistryFactory. (SPI, Singleton, ThreadSafe)
  *
+ * 注册工厂
+ *
  * @see org.apache.dubbo.registry.support.AbstractRegistryFactory
  */
 @SPI("dubbo")
 public interface RegistryFactory {
 
     /**
+     * 关联
      * Connect to the registry
      * <p>
      * Connecting the registry needs to support the contract: <br>

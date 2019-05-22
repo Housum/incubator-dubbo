@@ -34,6 +34,7 @@ import org.apache.dubbo.rpc.RpcInvocation;
 import org.apache.dubbo.rpc.RpcResult;
 import org.apache.dubbo.rpc.SimpleAsyncRpcResult;
 import org.apache.dubbo.rpc.protocol.AbstractInvoker;
+import org.apache.dubbo.rpc.proxy.InvokerInvocationHandler;
 import org.apache.dubbo.rpc.support.RpcUtils;
 
 import java.util.Set;
@@ -41,6 +42,7 @@ import java.util.concurrent.locks.ReentrantLock;
 
 /**
  * DubboInvoker
+ * @see  InvokerInvocationHandler#invoke(java.lang.Object, java.lang.reflect.Method, java.lang.Object[])
  */
 public class DubboInvoker<T> extends AbstractInvoker<T> {
 
@@ -80,16 +82,23 @@ public class DubboInvoker<T> extends AbstractInvoker<T> {
             currentClient = clients[index.getAndIncrement() % clients.length];
         }
         try {
+            //是否异步 这里的判断条件其实是在创建invocation的时候判断返回类型是否是future
+            //@see org.apache.dubbo.rpc.proxy.InvokerInvocationHandler.createInvocation
             boolean isAsync = RpcUtils.isAsync(getUrl(), invocation);
             boolean isAsyncFuture = RpcUtils.isReturnTypeFuture(inv);
+
+            //不需要返回的情况
             boolean isOneway = RpcUtils.isOneway(getUrl(), invocation);
+            //超时时间
             int timeout = getUrl().getMethodParameter(methodName, Constants.TIMEOUT_KEY, Constants.DEFAULT_TIMEOUT);
             if (isOneway) {
                 boolean isSent = getUrl().getMethodParameter(methodName, Constants.SENT_KEY, false);
                 currentClient.send(inv, isSent);
                 RpcContext.getContext().setFuture(null);
+                //不需要等待结果 直接返回就可以了
                 return new RpcResult();
             } else if (isAsync) {
+                //如果是异步的话 同时返回请求
                 ResponseFuture future = currentClient.request(inv, timeout);
                 // For compatibility
                 FutureAdapter<Object> futureAdapter = new FutureAdapter<>(future);

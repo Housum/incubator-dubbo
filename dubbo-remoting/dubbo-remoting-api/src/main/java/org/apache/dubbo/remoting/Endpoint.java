@@ -23,6 +23,7 @@ import java.net.InetSocketAddress;
 /**
  * Endpoint. (API/SPI, Prototype, ThreadSafe)
  *
+ * 代表的是一个终端
  *
  * @see org.apache.dubbo.remoting.Channel
  * @see org.apache.dubbo.remoting.Client
@@ -40,6 +41,7 @@ public interface Endpoint {
     /**
      * get channel handler.
      *
+     * 关联的处理器
      * @return channel handler
      */
     ChannelHandler getChannelHandler();
@@ -53,6 +55,7 @@ public interface Endpoint {
 
     /**
      * send message.
+     * 发送消息
      *
      * @param message
      * @throws RemotingException

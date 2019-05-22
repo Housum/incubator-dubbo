@@ -21,6 +21,7 @@ import org.apache.dubbo.remoting.RemotingException;
 
 /**
  * ExchangeChannel. (API/SPI, Prototype, ThreadSafe)
+ * 交换层对象 跟远程对象进行交互
  */
 public interface ExchangeChannel extends Channel {
 
@@ -45,7 +46,7 @@ public interface ExchangeChannel extends Channel {
 
     /**
      * get message handler.
-     *
+     * 交换的处理器
      * @return message handler
      */
     ExchangeHandler getExchangeHandler();

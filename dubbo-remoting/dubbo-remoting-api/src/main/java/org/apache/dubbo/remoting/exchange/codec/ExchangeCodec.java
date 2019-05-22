@@ -66,6 +66,7 @@ public class ExchangeCodec extends TelnetCodec {
     @Override
     public void encode(Channel channel, ChannelBuffer buffer, Object msg) throws IOException {
         if (msg instanceof Request) {
+            //对请求进行编码
             encodeRequest(channel, buffer, (Request) msg);
         } else if (msg instanceof Response) {
             encodeResponse(channel, buffer, (Response) msg);
@@ -78,13 +79,16 @@ public class ExchangeCodec extends TelnetCodec {
     public Object decode(Channel channel, ChannelBuffer buffer) throws IOException {
         int readable = buffer.readableBytes();
         byte[] header = new byte[Math.min(readable, HEADER_LENGTH)];
+        //流的前16个字节是头部
         buffer.readBytes(header);
+        //buffer 中已经没有header信息了 已经读出来了
         return decode(channel, buffer, readable, header);
     }
 
     @Override
     protected Object decode(Channel channel, ChannelBuffer buffer, int readable, byte[] header) throws IOException {
         // check magic number.
+        //先检查magic
         if (readable > 0 && header[0] != MAGIC_HIGH
                 || readable > 1 && header[1] != MAGIC_LOW) {
             int length = header.length;
@@ -102,20 +106,25 @@ public class ExchangeCodec extends TelnetCodec {
             return super.decode(channel, buffer, readable, header);
         }
         // check length.
+        //如果除了头部 没有数据的话 那么表示数据不全
         if (readable < HEADER_LENGTH) {
             return DecodeResult.NEED_MORE_INPUT;
         }
 
         // get data length.
+        //12-16位储存的是数据的大小
         int len = Bytes.bytes2int(header, 12);
         checkPayload(channel, len);
 
+        //全部的长度
         int tt = len + HEADER_LENGTH;
+        //如果长度还不够 所以包还没有接受完整
         if (readable < tt) {
             return DecodeResult.NEED_MORE_INPUT;
         }
 
         // limit input stream.
+        // 这部分是传输的数据(不包括头部信息)
         ChannelBufferInputStream is = new ChannelBufferInputStream(buffer, len);
 
         try {
@@ -208,6 +217,8 @@ public class ExchangeCodec extends TelnetCodec {
     }
 
     protected void encodeRequest(Channel channel, ChannelBuffer buffer, Request req) throws IOException {
+
+        //序列化
         Serialization serialization = getSerialization(channel);
         // header.
         byte[] header = new byte[HEADER_LENGTH];
@@ -215,21 +226,27 @@ public class ExchangeCodec extends TelnetCodec {
         Bytes.short2bytes(MAGIC, header);
 
         // set request and serialization flag.
+        //标记序列化的方式 在反序列化的时候 将会根据此进行辨别
         header[2] = (byte) (FLAG_REQUEST | serialization.getContentTypeId());
 
         if (req.isTwoWay()) {
+            //是否是请求和返回的方式
             header[2] |= FLAG_TWOWAY;
         }
         if (req.isEvent()) {
+            //是否是事件
             header[2] |= FLAG_EVENT;
         }
 
-        // set request id.
+        // set request id. @see org.apache.dubbo.remoting.exchange.Request.newId
         Bytes.long2bytes(req.getId(), header, 4);
 
+        //这部分存储的是真实的请求数据
         // encode request data.
         int savedWriteIndex = buffer.writerIndex();
+        //中间留一个header的长度放头部信息
         buffer.writerIndex(savedWriteIndex + HEADER_LENGTH);
+        //将对象编码之后从writerIndex开始写数据
         ChannelBufferOutputStream bos = new ChannelBufferOutputStream(buffer);
         ObjectOutput out = serialization.serialize(channel.getUrl(), bos);
         if (req.isEvent()) {
@@ -238,13 +255,16 @@ public class ExchangeCodec extends TelnetCodec {
             encodeRequestData(channel, out, req.getData(), req.getVersion());
         }
         out.flushBuffer();
+        //清理
         if (out instanceof Cleanable) {
             ((Cleanable) out).cleanup();
         }
         bos.flush();
         bos.close();
         int len = bos.writtenBytes();
+        //检查大小
         checkPayload(channel, len);
+        //将数据大小写入到头部
         Bytes.int2bytes(len, header, 12);
 
         // write
@@ -254,6 +274,8 @@ public class ExchangeCodec extends TelnetCodec {
     }
 
     protected void encodeResponse(Channel channel, ChannelBuffer buffer, Response res) throws IOException {
+
+        //对请求的回复进行编码
         int savedWriteIndex = buffer.writerIndex();
         try {
             Serialization serialization = getSerialization(channel);

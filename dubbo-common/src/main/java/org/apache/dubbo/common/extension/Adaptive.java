@@ -54,6 +54,20 @@ public @interface Adaptive {
      * <code>String[] {"yyy.invoker.wrapper"}</code>.
      *
      * @return parameter names in URL
+     *
+     * 指定具体注入的SPI扩展的name 即SPI文件中的key名称
+     * 比如： spi=org.apache.dubbo.common.extension.factory.SpiExtensionFactory
+     * 的key就是：spi
+     *
+     * 那么获取的具体的扩展实现类的时候就是通过： URL.getParameter("spi")返回的就是
+     * org.apache.dubbo.common.extension.factory.SpiExtensionFactory
+     *
+     * 如果没有指定的话,那么默认使用的key是SPI指定的
+     *
+     * 如果SPI也没有指定的话,那么key就是将注解了该注解的类名按照驼峰法进行分解加上"."
+     *
+     * 比如: Cluster 的key为cluster
+     * @see SPI
      */
     String[] value() default {};
 

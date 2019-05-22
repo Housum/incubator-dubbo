@@ -33,6 +33,8 @@ import java.util.concurrent.locks.ReentrantLock;
 
 /**
  * AbstractRegistryFactory. (SPI, Singleton, ThreadSafe)
+ * <p>
+ * 注册中心工程类的抽象类 实现了部分公共的逻辑
  *
  * @see org.apache.dubbo.registry.RegistryFactory
  */
@@ -42,6 +44,7 @@ public abstract class AbstractRegistryFactory implements RegistryFactory {
     private static final Logger LOGGER = LoggerFactory.getLogger(AbstractRegistryFactory.class);
 
     // The lock for the acquisition process of the registry
+    //对注解中心的锁
     private static final ReentrantLock LOCK = new ReentrantLock();
 
     // Registry Collection Map<RegistryAddress, Registry>
@@ -49,6 +52,7 @@ public abstract class AbstractRegistryFactory implements RegistryFactory {
 
     /**
      * Get all registries
+     * 获取所有的注解节点
      *
      * @return all registries
      */
@@ -109,6 +113,7 @@ public abstract class AbstractRegistryFactory implements RegistryFactory {
         }
     }
 
+    //创建注册中心
     protected abstract Registry createRegistry(URL url);
 
 }

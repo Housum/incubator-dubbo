@@ -26,6 +26,7 @@ import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * TODO load as SPI will be better?
+ * 代表了dubbo的环境配置
  */
 public class Environment {
     private static final Environment INSTANCE = new Environment();

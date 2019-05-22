@@ -37,7 +37,7 @@ public abstract class AbstractZookeeperClient<TargetDataListener, TargetChildLis
 
     private final URL url;
 
-    private final Set<StateListener> stateListeners = new CopyOnWriteArraySet<StateListener>();
+    private final Set<StateListener> stateListeners = new CopyOnWriteArraySet<>();
 
     private final ConcurrentMap<String, ConcurrentMap<ChildListener, TargetChildListener>> childListeners = new ConcurrentHashMap<String, ConcurrentMap<ChildListener, TargetChildListener>>();
 
@@ -106,11 +106,19 @@ public abstract class AbstractZookeeperClient<TargetDataListener, TargetChildLis
         this.addDataListener(path, listener, null);
     }
 
+    /**
+     * 这里的设计 一个path有多个的DataListener,但是因为DataListener为dubbo内部的
+     * 接口 不能够传入到具体的框架回调接口中,但是TargetDataListener设计就是传入到框架中去的
+     * 见 org.apache.dubbo.remoting.zookeeper.curator.CuratorZookeeperClient.CuratorWatcherImpl
+     * @param path:    directory. All of child of path will be listened.
+     * @param listener
+     * @param executor another thread
+     */
     @Override
     public void addDataListener(String path, DataListener listener, Executor executor) {
         ConcurrentMap<DataListener, TargetDataListener> dataListenerMap = listeners.get(path);
         if (dataListenerMap == null) {
-            listeners.putIfAbsent(path, new ConcurrentHashMap<DataListener, TargetDataListener>());
+            listeners.putIfAbsent(path, new ConcurrentHashMap<>());
             dataListenerMap = listeners.get(path);
         }
         TargetDataListener targetListener = dataListenerMap.get(listener);
@@ -118,6 +126,7 @@ public abstract class AbstractZookeeperClient<TargetDataListener, TargetChildLis
             dataListenerMap.putIfAbsent(listener, createTargetDataListener(path, listener));
             targetListener = dataListenerMap.get(listener);
         }
+        //监听指定的path的监听器
         addTargetDataListener(path, targetListener, executor);
     }
 
@@ -202,10 +211,16 @@ public abstract class AbstractZookeeperClient<TargetDataListener, TargetChildLis
 
     protected abstract List<String> addTargetChildListener(String path, TargetChildListener listener);
 
+    /**
+     * 创建传入到框架内部的TargetDataListener
+     */
     protected abstract TargetDataListener createTargetDataListener(String path, DataListener listener);
 
     protected abstract void addTargetDataListener(String path, TargetDataListener listener);
 
+    /**
+     * 将TargetDataListener传入到框架中 监听path的修改
+     */
     protected abstract void addTargetDataListener(String path, TargetDataListener listener, Executor executor);
 
     protected abstract void removeTargetDataListener(String path, TargetDataListener listener);

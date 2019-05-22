@@ -34,6 +34,8 @@ import java.util.regex.Matcher;
 
 /**
  * Wrapper.
+ *
+ * Wrapper类 为接口生成代理类和统一方法的调用方法入口.以及属性获取的入口
  */
 public abstract class Wrapper {
     private static final Map<Class<?>, Wrapper> WRAPPER_MAP = new ConcurrentHashMap<Class<?>, Wrapper>(); //class wrapper map
@@ -121,6 +123,7 @@ public abstract class Wrapper {
         return ret;
     }
 
+    //对接口生成一个代理类
     private static Wrapper makeWrapper(Class<?> c) {
         if (c.isPrimitive()) {
             throw new IllegalArgumentException("Can not create wrapper for primitive type: " + c);
@@ -129,10 +132,12 @@ public abstract class Wrapper {
         String name = c.getName();
         ClassLoader cl = ClassHelper.getClassLoader(c);
 
+        //三个方法 设置属性 获取属性 调用指定方法
         StringBuilder c1 = new StringBuilder("public void setPropertyValue(Object o, String n, Object v){ ");
         StringBuilder c2 = new StringBuilder("public Object getPropertyValue(Object o, String n){ ");
         StringBuilder c3 = new StringBuilder("public Object invokeMethod(Object o, String n, Class[] p, Object[] v) throws " + InvocationTargetException.class.getName() + "{ ");
 
+        //将传入的参数进行强转为"name"类型 如果强转失败的话  那么抛出IllegalArgumentException异常
         c1.append(name).append(" w; try{ w = ((").append(name).append(")$1); }catch(Throwable e){ throw new IllegalArgumentException(e); }");
         c2.append(name).append(" w; try{ w = ((").append(name).append(")$1); }catch(Throwable e){ throw new IllegalArgumentException(e); }");
         c3.append(name).append(" w; try{ w = ((").append(name).append(")$1); }catch(Throwable e){ throw new IllegalArgumentException(e); }");
@@ -142,6 +147,7 @@ public abstract class Wrapper {
         List<String> mns = new ArrayList<>(); // method names.
         List<String> dmns = new ArrayList<>(); // declaring method names.
 
+        //获取字段
         // get all public field.
         for (Field f : c.getFields()) {
             String fn = f.getName();
@@ -149,8 +155,9 @@ public abstract class Wrapper {
             if (Modifier.isStatic(f.getModifiers()) || Modifier.isTransient(f.getModifiers())) {
                 continue;
             }
-
+            //设置属性
             c1.append(" if( $2.equals(\"").append(fn).append("\") ){ w.").append(fn).append("=").append(arg(ft, "$3")).append("; return; }");
+            //获取属性
             c2.append(" if( $2.equals(\"").append(fn).append("\") ){ return ($w)w.").append(fn).append("; }");
             pts.put(fn, ft);
         }

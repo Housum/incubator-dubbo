@@ -124,6 +124,9 @@ public class Response {
         return mStatus;
     }
 
+    /**
+     * 状态
+     */
     public void setStatus(byte status) {
         mStatus = status;
     }

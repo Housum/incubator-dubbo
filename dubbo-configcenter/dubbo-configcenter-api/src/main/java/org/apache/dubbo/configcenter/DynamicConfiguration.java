@@ -25,6 +25,7 @@ import static org.apache.dubbo.common.extension.ExtensionLoader.getExtensionLoad
 
 /**
  * Dynamic configuration
+ * 动态配置
  */
 public interface DynamicConfiguration extends Configuration {
     String DEFAULT_GROUP = "dubbo";
@@ -32,8 +33,8 @@ public interface DynamicConfiguration extends Configuration {
     /**
      * {@link #addListener(String, String, ConfigurationListener)}
      *
-     * @param key      the key to represent a configuration
-     * @param listener configuration listener
+     * @param key      the key to represent a configuration 代表配置的key
+     * @param listener configuration listener 配置的监听器 当配置有变化的时候 将就被触发
      */
     default void addListener(String key, ConfigurationListener listener) {
         addListener(key, DEFAULT_GROUP, listener);
@@ -106,6 +107,8 @@ public interface DynamicConfiguration extends Configuration {
 
     /**
      * Find DynamicConfiguration instance
+     *
+     * 获取动态配置中心
      *
      * @return DynamicConfiguration instance
      */

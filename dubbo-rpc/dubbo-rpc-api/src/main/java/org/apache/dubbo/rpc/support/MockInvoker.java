@@ -164,6 +164,10 @@ final public class MockInvoker<T> implements Invoker<T> {
         return invoker;
     }
 
+    /**
+     * Mock Service
+     * @link https://www.jianshu.com/p/ce8de35986cf
+     */
     @SuppressWarnings("unchecked")
     public static Object getMockObject(String mockService, Class serviceType) {
         if (ConfigUtils.isDefault(mockService)) {
@@ -177,6 +181,7 @@ final public class MockInvoker<T> implements Invoker<T> {
         }
 
         try {
+            //必须存在一个无参的构造函数
             return mockClass.newInstance();
         } catch (InstantiationException e) {
             throw new IllegalStateException("No default constructor from mock class " + mockClass.getName(), e);

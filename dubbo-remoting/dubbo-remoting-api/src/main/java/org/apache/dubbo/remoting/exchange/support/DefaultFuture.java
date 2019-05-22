@@ -43,6 +43,7 @@ import java.util.concurrent.locks.ReentrantLock;
 
 /**
  * DefaultFuture.
+ * 异步返回的Future
  */
 public class DefaultFuture implements ResponseFuture {
 
@@ -52,6 +53,7 @@ public class DefaultFuture implements ResponseFuture {
 
     private static final Map<Long, DefaultFuture> FUTURES = new ConcurrentHashMap<>();
 
+    //定时轮询请求是否超时
     public static final Timer TIME_OUT_TIMER = new HashedWheelTimer(
             new NamedThreadFactory("dubbo-future-timeout", true),
             30,
@@ -67,12 +69,14 @@ public class DefaultFuture implements ResponseFuture {
     private final long start = System.currentTimeMillis();
     private volatile long sent;
     private volatile Response response;
+    //callback
     private volatile ResponseCallback callback;
 
     private DefaultFuture(Channel channel, Request request, int timeout) {
         this.channel = channel;
         this.request = request;
         this.id = request.getId();
+        //超时 默认是1秒
         this.timeout = timeout > 0 ? timeout : channel.getUrl().getPositiveParameter(Constants.TIMEOUT_KEY, Constants.DEFAULT_TIMEOUT);
         // put into waiting map.
         FUTURES.put(id, this);
@@ -98,8 +102,10 @@ public class DefaultFuture implements ResponseFuture {
      * @return a new DefaultFuture
      */
     public static DefaultFuture newFuture(Channel channel, Request request, int timeout) {
+        //创建Future,但有返回的时候 将调用org.apache.dubbo.remoting.exchange.support.DefaultFuture.received 151
+        //进行结果的设置
         final DefaultFuture future = new DefaultFuture(channel, request, timeout);
-        // timeout check
+        // timeout check 因为这是一个异步的操作,所以需要检查是否超时
         timeoutCheck(future);
         return future;
     }
@@ -146,6 +152,7 @@ public class DefaultFuture implements ResponseFuture {
         try {
             DefaultFuture future = FUTURES.remove(response.getId());
             if (future != null) {
+                //设置值 异步得到的结果
                 future.doReceived(response);
             } else {
                 logger.warn("The timeout response finally returned at "

@@ -42,6 +42,12 @@ public class UrlUtils {
      */
     private final static String URL_PARAM_STARTING_SYMBOL = "?";
 
+    /**
+     * 从地址解析出 URL
+     * @param address
+     * @param defaults
+     * @return
+     */
     public static URL parseURL(String address, Map<String, String> defaults) {
         if (address == null || address.length() == 0) {
             return null;
@@ -60,15 +66,19 @@ public class UrlUtils {
                     }
                     backup.append(addresses[i]);
                 }
+                //ip0?backup=ip1,ip2,ipn
                 url += URL_PARAM_STARTING_SYMBOL + Constants.BACKUP_KEY + "=" + backup.toString();
             }
         }
+        //获取默认的协议 如果默认协议不存在的话 那么设置为dubbo
         String defaultProtocol = defaults == null ? null : defaults.get(Constants.PROTOCOL_KEY);
         if (defaultProtocol == null || defaultProtocol.length() == 0) {
             defaultProtocol = Constants.DUBBO_PROTOCOL;
         }
+        //默认的用户名和密码
         String defaultUsername = defaults == null ? null : defaults.get(Constants.USERNAME_KEY);
         String defaultPassword = defaults == null ? null : defaults.get(Constants.PASSWORD_KEY);
+        //端口
         int defaultPort = StringUtils.parseInteger(defaults == null ? null : defaults.get(Constants.PORT_KEY));
         String defaultPath = defaults == null ? null : defaults.get(Constants.PATH_KEY);
         Map<String, String> defaultParameters = defaults == null ? null : new HashMap<String, String>(defaults);
@@ -80,6 +90,7 @@ public class UrlUtils {
             defaultParameters.remove(Constants.PORT_KEY);
             defaultParameters.remove(Constants.PATH_KEY);
         }
+        //解析出URL
         URL u = URL.valueOf(url);
         boolean changed = false;
         String protocol = u.getProtocol();
@@ -143,6 +154,7 @@ public class UrlUtils {
         if (address == null || address.length() == 0) {
             return null;
         }
+        //注册地址可以通过"；"进行分割
         String[] addresses = Constants.REGISTRY_SPLIT_PATTERN.split(address);
         if (addresses == null || addresses.length == 0) {
             return null; //here won't be empty

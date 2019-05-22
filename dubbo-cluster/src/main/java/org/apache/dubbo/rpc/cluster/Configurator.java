@@ -30,19 +30,23 @@ import java.util.Optional;
 
 /**
  * Configurator. (SPI, Prototype, ThreadSafe)
- *
+ * URL配置参数的 parameters部分
+ * 实现了URL转Configurator 和URL的配置功能
  */
 public interface Configurator extends Comparable<Configurator> {
 
     /**
      * Get the configurator url.
      *
+     * 获取配置的URL
      * @return configurator url.
      */
     URL getUrl();
 
     /**
      * Configure the provider url.
+     * <p>
+     * 如果在配置中心指定的配置有修改的话 那么进行配置成新的URL
      *
      * @param url - old provider url.
      * @return new provider url.
@@ -53,7 +57,7 @@ public interface Configurator extends Comparable<Configurator> {
     /**
      * Convert override urls to map for use when re-refer. Send all rules every time, the urls will be reassembled and
      * calculated
-     *
+     * <p>
      * URL contract:
      * <ol>
      * <li>override://0.0.0.0/...( or override://ip:port...?anyhost=true)&para1=value1... means global rules
@@ -63,6 +67,8 @@ public interface Configurator extends Comparable<Configurator> {
      * <li>override://0.0.0.0/ without parameters means clearing the override</li>
      * </ol>
      *
+     * 将URL转换为Configurator,具体的转换规则有上面的四个约束
+     *
      * @param urls URL list to convert
      * @return converted configurator list
      */
@@ -71,22 +77,30 @@ public interface Configurator extends Comparable<Configurator> {
             return Optional.empty();
         }
 
+        //目前只有两个
+        //override=org.apache.dubbo.rpc.cluster.configurator.override.OverrideConfiguratorFactory
+        //absent=org.apache.dubbo.rpc.cluster.configurator.absent.AbsentConfiguratorFactory
         ConfiguratorFactory configuratorFactory = ExtensionLoader.getExtensionLoader(ConfiguratorFactory.class)
                 .getAdaptiveExtension();
 
         List<Configurator> configurators = new ArrayList<>(urls.size());
         for (URL url : urls) {
+            //如果协议是empty 清理配置 那么退出循环
             if (Constants.EMPTY_PROTOCOL.equals(url.getProtocol())) {
                 configurators.clear();
                 break;
             }
+            //获取配置
             Map<String, String> override = new HashMap<>(url.getParameters());
             //The anyhost parameter of override may be added automatically, it can't change the judgement of changing url
+            //该配置有可能是自动加上去的 所以在判断第四点的时候需要移掉
             override.remove(Constants.ANYHOST_KEY);
+            //如果参数为空的话 那么清理configurators
             if (override.size() == 0) {
                 configurators.clear();
                 continue;
             }
+            //TODO 这里能够确定URL中的协议是 override或者 absent吗
             configurators.add(configuratorFactory.getConfigurator(url));
         }
         Collections.sort(configurators);

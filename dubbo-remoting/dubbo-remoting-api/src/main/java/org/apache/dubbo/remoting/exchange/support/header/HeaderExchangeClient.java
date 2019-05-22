@@ -38,6 +38,7 @@ import static org.apache.dubbo.common.utils.UrlUtils.getIdleTimeout;
 
 /**
  * DefaultMessageClient
+ * 信息转换层 能够提供异步操作的功能
  */
 public class HeaderExchangeClient implements ExchangeClient {
 
@@ -52,6 +53,8 @@ public class HeaderExchangeClient implements ExchangeClient {
     public HeaderExchangeClient(Client client, boolean startTimer) {
         Assert.notNull(client, "Client can't be null");
         this.client = client;
+        //这里的HeaderExchangeChannel是exchange层的东西 Client属于transport层的东西
+        //外面看到的是HeaderExchangeChannel
         this.channel = new HeaderExchangeChannel(client);
 
         if (startTimer) {

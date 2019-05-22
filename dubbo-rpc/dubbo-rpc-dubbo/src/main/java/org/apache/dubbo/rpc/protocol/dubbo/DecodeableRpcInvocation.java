@@ -87,6 +87,8 @@ public class DecodeableRpcInvocation extends RpcInvocation implements Codec, Dec
 
     @Override
     public Object decode(Channel channel, InputStream input) throws IOException {
+
+        //org.apache.dubbo.rpc.protocol.dubbo.DubboCodec.encodeRequestData(org.apache.dubbo.remoting.Channel,org.apache.dubbo.common.serialize.ObjectOutput, java.lang.Object, java.lang.String)
         ObjectInput in = CodecSupport.getSerialization(channel.getUrl(), serializationType)
                 .deserialize(channel.getUrl(), input);
 

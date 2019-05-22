@@ -20,6 +20,7 @@ import org.apache.dubbo.common.Constants;
 import org.apache.dubbo.common.URL;
 import org.apache.dubbo.common.logger.Logger;
 import org.apache.dubbo.common.logger.LoggerFactory;
+import org.apache.dubbo.common.utils.Assert;
 import org.apache.dubbo.common.utils.StringUtils;
 import org.apache.dubbo.rpc.Invocation;
 import org.apache.dubbo.rpc.Invoker;
@@ -34,7 +35,7 @@ import java.util.Map;
 
 /**
  * Abstract implementation of Directory: Invoker list returned from this Directory's list method have been filtered by Routers
- *
+ * Directory 抽象实现
  */
 public abstract class AbstractDirectory<T> implements Directory<T> {
 
@@ -97,6 +98,7 @@ public abstract class AbstractDirectory<T> implements Directory<T> {
 
     protected void addRouters(List<Router> routers) {
         routers = routers == null ? Collections.emptyList() : routers;
+        Assert.notNull(routerChain, "require routerChain not null");
         routerChain.addRouters(routers);
     }
 

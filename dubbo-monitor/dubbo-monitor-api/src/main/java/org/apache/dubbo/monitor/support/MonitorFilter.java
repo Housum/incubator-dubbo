@@ -39,6 +39,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * MonitorFilter. (SPI, Singleton, ThreadSafe)
+ * 默认是启动的,主要就是做了服务监控方面的东西
  */
 @Activate(group = {Constants.PROVIDER, Constants.CONSUMER})
 public class MonitorFilter implements Filter {
@@ -69,13 +70,17 @@ public class MonitorFilter implements Filter {
      */
     @Override
     public Result invoke(Invoker<?> invoker, Invocation invocation) throws RpcException {
+
+        //如果请求标记了需要监控的话 那么进行数据的采集
         if (invoker.getUrl().hasParameter(Constants.MONITOR_KEY)) {
             RpcContext context = RpcContext.getContext(); // provider must fetch context before invoke() gets called
             String remoteHost = context.getRemoteHost();
             long start = System.currentTimeMillis(); // record start timestamp
+            //计算接口的实时调用的总数
             getConcurrent(invoker, invocation).incrementAndGet(); // count up
             try {
                 Result result = invoker.invoke(invocation); // proceed invocation chain
+                //进行数据的收集
                 collect(invoker, invocation, result, remoteHost, start, false);
                 return result;
             } catch (RpcException e) {
@@ -101,6 +106,7 @@ public class MonitorFilter implements Filter {
      */
     private void collect(Invoker<?> invoker, Invocation invocation, Result result, String remoteHost, long start, boolean error) {
         try {
+            //监听地址
             URL monitorUrl = invoker.getUrl().getUrlParameter(Constants.MONITOR_KEY);
             Monitor monitor = monitorFactory.getMonitor(monitorUrl);
             if (monitor == null) {

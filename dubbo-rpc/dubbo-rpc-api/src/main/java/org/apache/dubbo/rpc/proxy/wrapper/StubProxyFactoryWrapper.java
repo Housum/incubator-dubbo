@@ -38,6 +38,9 @@ import java.lang.reflect.Constructor;
 
 /**
  * StubProxyFactoryWrapper
+ *
+ * 设为true，表示使用缺省代理类名，即：接口名 + Stub后缀，服务接口客户端本地代理类名，用于在客户端执行本地逻辑，如本地缓存等，
+ * 该本地代理类的构造函数必须允许传入远程代理对象，构造函数如：public XxxServiceStub(XxxService xxxService)
  */
 public class StubProxyFactoryWrapper implements ProxyFactory {
 
@@ -76,12 +79,15 @@ public class StubProxyFactoryWrapper implements ProxyFactory {
                         stub = serviceType.getName() + "Local";
                     }
                 }
+                //创建ServiceStub类
                 try {
                     Class<?> stubClass = ReflectUtils.forName(stub);
                     if (!serviceType.isAssignableFrom(stubClass)) {
                         throw new IllegalStateException("The stub implementation class " + stubClass.getName() + " not implement interface " + serviceType.getName());
                     }
                     try {
+
+                        //Stub的约束 构造函数函数必须是interface-class
                         Constructor<?> constructor = ReflectUtils.findConstructor(stubClass, serviceType);
                         proxy = (T) constructor.newInstance(new Object[]{proxy});
                         //export stub service

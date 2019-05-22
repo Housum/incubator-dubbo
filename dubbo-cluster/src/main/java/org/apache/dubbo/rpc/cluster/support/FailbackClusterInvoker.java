@@ -41,6 +41,8 @@ import java.util.concurrent.TimeUnit;
  * Especially useful for services of notification.
  *
  * <a href="http://en.wikipedia.org/wiki/Failback">Failback</a>
+ * <p>
+ * 失败自动恢复
  */
 public class FailbackClusterInvoker<T> extends AbstractClusterInvoker<T> {
 
@@ -129,7 +131,7 @@ public class FailbackClusterInvoker<T> extends AbstractClusterInvoker<T> {
             this.invokers = invokers;
             this.retries = retries;
             this.tick = tick;
-            this.lastInvoker=lastInvoker;
+            this.lastInvoker = lastInvoker;
         }
 
         @Override

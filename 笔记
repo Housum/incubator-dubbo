@@ -1,0 +1,19 @@
+service参数配置
+
+1.scope 暴露服务的范围（默认是暴露远程以及暴露给本地）
+取值:
+remote 指的是只暴露给远程 不暴露本地
+none 指的是不暴露服务
+local 只暴露给本地
+
+2.DUBBO_IP_TO_BIND dubbo绑定的地址,从System的Properties获取,默认是本机的IP
+
+3.DUBBO_PORT_TO_BIND dubbo绑定的端口,从System的Properties获取,如果不存在的话 随机启动
+
+4.proxy 生成Invoker的代理方式
+提供了以下三种:
+stub=org.apache.dubbo.rpc.proxy.wrapper.StubProxyFactoryWrapper
+jdk=org.apache.dubbo.rpc.proxy.jdk.JdkProxyFactory
+javassist=org.apache.dubbo.rpc.proxy.javassist.JavassistProxyFactory
+默认使用的是javassist
+

@@ -18,6 +18,9 @@ package org.apache.dubbo.rpc.model;
 
 import java.lang.reflect.Method;
 
+/**
+ * 暴露服务的暴露单个方法模型
+ */
 public class ProviderMethodModel {
     private transient final Method method;
     private final String methodName;

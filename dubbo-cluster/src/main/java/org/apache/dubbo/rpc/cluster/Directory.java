@@ -27,21 +27,24 @@ import java.util.List;
  * Directory. (SPI, Prototype, ThreadSafe)
  * <p>
  * <a href="http://en.wikipedia.org/wiki/Directory_service">Directory Service</a>
+ * https://baike.baidu.com/item/directory%20service/10904722
  *
+ * 服务目录的一个概念 主要是对服务的操作的
  * @see org.apache.dubbo.rpc.cluster.Cluster#join(Directory)
  */
 public interface Directory<T> extends Node {
-
     /**
      * get service type.
-     *
+     * 获取服务的接口
      * @return service type.
      */
     Class<T> getInterface();
 
     /**
      * list invokers.
+     * 服务接口对应的Invoker,Invoker是实体域，表示的是一个远程对象
      *
+     * 这里就相当于由Invocation查询其服务有哪些
      * @return invokers
      */
     List<Invoker<T>> list(Invocation invocation) throws RpcException;

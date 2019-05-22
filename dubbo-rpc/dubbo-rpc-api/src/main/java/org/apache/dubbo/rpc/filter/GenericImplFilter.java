@@ -41,6 +41,8 @@ import java.lang.reflect.Method;
 
 /**
  * GenericImplInvokerFilter
+ * 对于范型服务的处理
+ *
  */
 @Activate(group = Constants.CONSUMER, value = Constants.GENERIC_KEY, order = 20000)
 public class GenericImplFilter implements Filter {
@@ -52,6 +54,8 @@ public class GenericImplFilter implements Filter {
     @Override
     public Result invoke(Invoker<?> invoker, Invocation invocation) throws RpcException {
         String generic = invoker.getUrl().getParameter(Constants.GENERIC_KEY);
+
+        //将请求服务进行改写
         if (ProtocolUtils.isGeneric(generic)
                 && !Constants.$INVOKE.equals(invocation.getMethodName())
                 && invocation instanceof RpcInvocation) {

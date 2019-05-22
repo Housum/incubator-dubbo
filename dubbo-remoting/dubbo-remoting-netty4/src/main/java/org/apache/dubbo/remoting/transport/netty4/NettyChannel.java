@@ -34,6 +34,7 @@ import java.util.concurrent.ConcurrentMap;
 
 /**
  * NettyChannel.
+ * 封装了netty的channel
  */
 final class NettyChannel extends AbstractChannel {
 
@@ -98,6 +99,7 @@ final class NettyChannel extends AbstractChannel {
         boolean success = true;
         int timeout = 0;
         try {
+            //进行发送消息
             ChannelFuture future = channel.writeAndFlush(message);
             if (sent) {
                 timeout = getUrl().getPositiveParameter(Constants.TIMEOUT_KEY, Constants.DEFAULT_TIMEOUT);

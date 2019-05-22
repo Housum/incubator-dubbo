@@ -22,6 +22,8 @@ package org.apache.dubbo.rpc;
  * @see org.apache.dubbo.rpc.Protocol#export(Invoker)
  * @see org.apache.dubbo.rpc.ExporterListener
  * @see org.apache.dubbo.rpc.protocol.AbstractExporter
+ * <p>
+ * 概念上就是服务端暴露的服务
  */
 public interface Exporter<T> {
 

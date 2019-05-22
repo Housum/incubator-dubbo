@@ -122,7 +122,8 @@ public class Constants {
 
     public static final String DEFAULT_TRANSPORTER = "netty";
 
-    public static final String DEFAULT_REMOTING_SERVER = "netty";
+    //mod by luqibao netty = netty4 默认使用协议为netty4
+    public static final String DEFAULT_REMOTING_SERVER = "netty4";
 
     public static final String DEFAULT_REMOTING_CLIENT = "netty";
 

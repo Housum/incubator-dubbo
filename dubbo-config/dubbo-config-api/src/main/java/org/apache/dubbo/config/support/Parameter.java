@@ -16,6 +16,8 @@
  */
 package org.apache.dubbo.config.support;
 
+import org.apache.dubbo.config.AbstractConfig;
+
 import java.lang.annotation.Documented;
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
@@ -24,6 +26,7 @@ import java.lang.annotation.Target;
 
 /**
  * Parameter
+ * @see AbstractConfig#appendParameters(java.util.Map, java.lang.Object, java.lang.String)
  */
 @Documented
 @Retention(RetentionPolicy.RUNTIME)
@@ -36,6 +39,9 @@ public @interface Parameter {
 
     boolean excluded() default false;
 
+    /**
+     * 是否需要编码
+     */
     boolean escaped() default false;
 
     boolean attribute() default false;

@@ -31,6 +31,8 @@ import java.util.Map;
 /**
  * The application info
  *
+ * 应用的配置
+ * 形如：http://dubbo.apache.org/zh-cn/docs/user/references/xml/dubbo-application.html
  * @export
  */
 public class ApplicationConfig extends AbstractConfig {
@@ -39,6 +41,9 @@ public class ApplicationConfig extends AbstractConfig {
 
     /**
      * Application name
+     * 当前应用名称，用于注册中心计算应用间依赖关系，注意：消费者和提供者应用名不要一样，此参数不是匹配条件，你当前项目叫什么名字就填什么，
+     * 和提供者消费者角色无关，比如：kylin应用调用了morgan应用的服务，则kylin项目配成kylin，morgan项目配成morgan，可能kylin也提供其它服务给别人使用，
+     * 但kylin项目永远配成kylin，这样注册中心将显示kylin依赖于morgan
      */
     private String name;
 

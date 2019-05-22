@@ -32,18 +32,23 @@ public class JavassistProxyFactory extends AbstractProxyFactory {
     @Override
     @SuppressWarnings("unchecked")
     public <T> T getProxy(Invoker<T> invoker, Class<?>[] interfaces) {
+        //生成给定类型的代理类,但是实际上方法内部调用的是invoker的方式
         return (T) Proxy.getProxy(interfaces).newInstance(new InvokerInvocationHandler(invoker));
     }
 
     @Override
     public <T> Invoker<T> getInvoker(T proxy, Class<T> type, URL url) {
-        // TODO Wrapper cannot handle this scenario correctly: the classname contains '$'
+        // TODO Wrapper cannot handle this scenario correctly: the classname contains '$' 这种情况是否有问题？
+        //如果出现"$"的代理类 那么生成的方法将会是实际类的方法
         final Wrapper wrapper = Wrapper.getWrapper(proxy.getClass().getName().indexOf('$') < 0 ? proxy.getClass() : type);
+
+        //将<dubbo:service> 的具体服务封装为Invoker
         return new AbstractProxyInvoker<T>(proxy, type, url) {
             @Override
             protected Object doInvoke(T proxy, String methodName,
                                       Class<?>[] parameterTypes,
                                       Object[] arguments) throws Throwable {
+                //这里执行的是T的具体的方法
                 return wrapper.invokeMethod(proxy, methodName, parameterTypes, arguments);
             }
         };

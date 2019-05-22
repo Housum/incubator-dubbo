@@ -59,6 +59,8 @@ import java.util.regex.Pattern;
  * @see org.apache.dubbo.common.extension.SPI
  * @see org.apache.dubbo.common.extension.Adaptive
  * @see org.apache.dubbo.common.extension.Activate
+ *
+ * dubbo的扩展加载器
  */
 public class ExtensionLoader<T> {
 
@@ -86,6 +88,9 @@ public class ExtensionLoader<T> {
 
     private final Holder<Map<String, Class<?>>> cachedClasses = new Holder<>();
 
+    /**
+     * 扩展点名称<->上面的Activate注解
+     */
     private final Map<String, Object> cachedActivates = new ConcurrentHashMap<>();
     private final ConcurrentMap<String, Holder<Object>> cachedInstances = new ConcurrentHashMap<>();
     private final Holder<Object> cachedAdaptiveInstance = new Holder<>();
@@ -99,6 +104,7 @@ public class ExtensionLoader<T> {
 
     private ExtensionLoader(Class<?> type) {
         this.type = type;
+        //ExtensionFactory  获取扩展类的工厂 可以通过类名+名称获取到扩展类 IOC容器
         objectFactory = (type == ExtensionFactory.class ? null : ExtensionLoader.getExtensionLoader(ExtensionFactory.class).getAdaptiveExtension());
     }
 
@@ -106,6 +112,9 @@ public class ExtensionLoader<T> {
         return type.isAnnotationPresent(SPI.class);
     }
 
+    /**
+     * 获取指定类型的SPI加载器  type必须是配置了SPI注解的接口
+     */
     @SuppressWarnings("unchecked")
     public static <T> ExtensionLoader<T> getExtensionLoader(Class<T> type) {
         if (type == null) {
@@ -214,6 +223,7 @@ public class ExtensionLoader<T> {
 
                 if (activate instanceof Activate) {
                     activateGroup = ((Activate) activate).group();
+                    //如果url中出现这些参数 那么才算是激活
                     activateValue = ((Activate) activate).value();
                 } else if (activate instanceof com.alibaba.dubbo.common.extension.Activate) {
                     activateGroup = ((com.alibaba.dubbo.common.extension.Activate) activate).group();
@@ -329,6 +339,10 @@ public class ExtensionLoader<T> {
     /**
      * Find the extension with the given name. If the specified name is not found, then {@link IllegalStateException}
      * will be thrown.
+     * 获取SPI扩展类 在org.apache.dubbo.common.extension.ExtensionLoader#createAdaptiveExtensionClass()中
+     * 对注解了Adaptive的方法生成动态代理方法,代理方法会调用该方法. 而在代理中的方法name参数是根据Adaptive注解了的方法的参数中的URL获取
+     * 指定的name或者是通过接口的SPI指定value指定的name(cachedDefaultName)
+     * @see org.apache.dubbo.common.extension.ExtensionLoaderTest#testExt2()
      */
     @SuppressWarnings("unchecked")
     public T getExtension(String name) {
@@ -528,10 +542,14 @@ public class ExtensionLoader<T> {
                 EXTENSION_INSTANCES.putIfAbsent(clazz, clazz.newInstance());
                 instance = (T) EXTENSION_INSTANCES.get(clazz);
             }
+            //属性进行注入
             injectExtension(instance);
             Set<Class<?>> wrapperClasses = cachedWrapperClasses;
+            //在这里将装饰类全部都给注入到了指定的SPI实现类中
+            //例如: <ProtocolFilterWrapper,ProtocolListenerWrapper
             if (CollectionUtils.isNotEmpty(wrapperClasses)) {
                 for (Class<?> wrapperClass : wrapperClasses) {
+                    //构造函数进行注入 返回的将是代理类而不是真是的工作类,
                     instance = injectExtension((T) wrapperClass.getConstructor(type).newInstance(instance));
                 }
             }
@@ -542,6 +560,11 @@ public class ExtensionLoader<T> {
         }
     }
 
+    /**
+     * 注入扩展点 对setter方法注入对象
+     * 注入的方式其实也是通过org.apache.dubbo.common.extension.ExtensionLoader#createExtension(java.lang.String)创建
+     * 一个参数注入进去
+     */
     private T injectExtension(T instance) {
         try {
             if (objectFactory != null) {
@@ -626,9 +649,11 @@ public class ExtensionLoader<T> {
 
     // synchronized in getExtensionClasses
     private Map<String, Class<?>> loadExtensionClasses() {
+        //获取 cachedDefaultName 注解'SPI'上面的名称
         cacheDefaultExtensionName();
 
         Map<String, Class<?>> extensionClasses = new HashMap<>();
+        //尝试从各个目录中获取SPI类的定义 最终将各个文件中SPI定义的type实现类都放入到了extensionClasses中
         loadDirectory(extensionClasses, DUBBO_INTERNAL_DIRECTORY, type.getName());
         loadDirectory(extensionClasses, DUBBO_INTERNAL_DIRECTORY, type.getName().replace("org.apache", "com.alibaba"));
         loadDirectory(extensionClasses, DUBBO_DIRECTORY, type.getName());
@@ -720,12 +745,15 @@ public class ExtensionLoader<T> {
                     type + ", class line: " + clazz.getName() + "), class "
                     + clazz.getName() + " is not subtype of interface.");
         }
+        //如果类注解了"Adaptive"
         if (clazz.isAnnotationPresent(Adaptive.class)) {
             cacheAdaptiveClass(clazz);
         } else if (isWrapperClass(clazz)) {
+            //是否是一个装饰类
             cacheWrapperClass(clazz);
         } else {
             clazz.getConstructor();
+            //如果在定义的时候没有定时key=value 的key  那么试图从"Extension"注解上面获取
             if (StringUtils.isEmpty(name)) {
                 name = findAnnotationName(clazz);
                 if (name.length() == 0) {
@@ -735,9 +763,12 @@ public class ExtensionLoader<T> {
 
             String[] names = NAME_SEPARATOR.split(name);
             if (ArrayUtils.isNotEmpty(names)) {
+                //注解"Activate"的类都记录下来 这部分是自动的激活的
                 cacheActivateClass(clazz, names[0]);
                 for (String n : names) {
+                    //缓存类的名称
                     cacheName(clazz, n);
+                    //将name对应的SPI实现放入到extensionClasses中
                     saveInExtensionClass(extensionClasses, clazz, name);
                 }
             }
@@ -812,6 +843,8 @@ public class ExtensionLoader<T> {
      * test if clazz is a wrapper class
      * <p>
      * which has Constructor with given class type as its only argument
+     * 是否是代理类 构造函数传入类
+     * @see org.apache.dubbo.rpc.protocol.ProtocolFilterWrapper
      */
     private boolean isWrapperClass(Class<?> clazz) {
         try {
@@ -846,13 +879,22 @@ public class ExtensionLoader<T> {
 
     private Class<?> getAdaptiveExtensionClass() {
         getExtensionClasses();
+
+        //是否有Adaptive注解的类
         if (cachedAdaptiveClass != null) {
             return cachedAdaptiveClass;
         }
+
         return cachedAdaptiveClass = createAdaptiveExtensionClass();
     }
 
+    /**
+     * 生成一个"InterName"$Adaptive的类,该接口注解了Adaptive的方法都会生成代理方法
+     * 方法的主要逻辑就是根据URL的参数(或者协议)获取该接口的扩展点(通过org.apache.dubbo.common.extension.ExtensionLoader#getExtension(java.lang.String)
+     * 获取，其中的参数就是URL中指定的,比如这里生成的是Protocol$Adaptive,如果URL的协议是zookeeper,那么执行Protocol方法的时候，其实底层调用的是ZookeeperProtocol的方法)
+     */
     private Class<?> createAdaptiveExtensionClass() {
+        //Adaptive注释的方法必须要有URL参数
         String code = new AdaptiveClassCodeGenerator(type, cachedDefaultName).generate();
         ClassLoader classLoader = findClassLoader();
         org.apache.dubbo.common.compiler.Compiler compiler = ExtensionLoader.getExtensionLoader(org.apache.dubbo.common.compiler.Compiler.class).getAdaptiveExtension();

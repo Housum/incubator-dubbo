@@ -27,6 +27,8 @@ import java.util.List;
  * Router. (SPI, Prototype, ThreadSafe)
  * <p>
  * <a href="http://en.wikipedia.org/wiki/Routing">Routing</a>
+ * <p>
+ * 路由
  *
  * @see org.apache.dubbo.rpc.cluster.Cluster#join(Directory)
  * @see org.apache.dubbo.rpc.cluster.Directory#list(Invocation)
@@ -44,6 +46,8 @@ public interface Router extends Comparable<Router> {
 
     /**
      * Filter invokers with current routing rule and only return the invokers that comply with the rule.
+     * <p>
+     * 对invokers进行执行路由规则 返回满足路由规则的invokers
      *
      * @param invokers   invoker list
      * @param url        refer url
@@ -57,6 +61,8 @@ public interface Router extends Comparable<Router> {
     /**
      * Notify the router the invoker list. Invoker list may change from time to time. This method gives the router a
      * chance to prepare before {@link Router#route(List, URL, Invocation)} gets called.
+     * <p>
+     * 当invokers变更的时候 将会被调用
      *
      * @param invokers invoker list
      * @param <T>      invoker's type
@@ -77,6 +83,8 @@ public interface Router extends Comparable<Router> {
      * To decide whether this router should take effect when none of the invoker can match the router rule, which
      * means the {@link #route(List, URL, Invocation)} would be empty. Most of time, most router implementation would
      * default this value to false.
+     * <p>
+     * 如果invoker都没有匹配上该路由规则的时候 该路由规则是否起作用
      *
      * @return true to execute if none of invokers matches the current router
      */
@@ -84,6 +92,7 @@ public interface Router extends Comparable<Router> {
 
     /**
      * Router's priority, used to sort routers.
+     * 路由的优先级
      *
      * @return router's priority
      */

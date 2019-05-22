@@ -32,6 +32,8 @@ public class ProtocolUtils {
 
     public static String serviceKey(int port, String serviceName, String serviceVersion, String serviceGroup) {
         StringBuilder buf = new StringBuilder();
+
+        //group/serviceName:version:port
         if (StringUtils.isNotEmpty(serviceGroup)) {
             buf.append(serviceGroup);
             buf.append("/");

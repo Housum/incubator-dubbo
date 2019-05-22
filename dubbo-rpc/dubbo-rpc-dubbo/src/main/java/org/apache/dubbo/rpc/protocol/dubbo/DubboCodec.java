@@ -60,19 +60,26 @@ public class DubboCodec extends ExchangeCodec {
 
     @Override
     protected Object decodeBody(Channel channel, InputStream is, byte[] header) throws IOException {
+        //序列化方式 @see org.apache.dubbo.remoting.exchange.codec.ExchangeCodec.encodeRequest
         byte flag = header[2], proto = (byte) (flag & SERIALIZATION_MASK);
         // get request id.
+        //请求ID
+        //从这里可以看到 头部一共16个字节 第一二位魔数,第三位是请求的标示(请求还是回复) 第四位开始请求的ID,同时12-16位储存的是数据的大小
         long id = Bytes.bytes2long(header, 4);
+        //如果是回复
         if ((flag & FLAG_REQUEST) == 0) {
             // decode response.
             Response res = new Response(id);
+            //事件 比如: 心跳检查,
             if ((flag & FLAG_EVENT) != 0) {
                 res.setEvent(true);
             }
-            // get status.
+            // get status. 状态
             byte status = header[3];
+            //服务的状态(非业务) 是正常
             res.setStatus(status);
             try {
+                //执行反序列化操作
                 ObjectInput in = CodecSupport.deserialize(channel.getUrl(), is, proto);
                 if (status == Response.OK) {
                     Object data;
@@ -81,6 +88,7 @@ public class DubboCodec extends ExchangeCodec {
                     } else if (res.isEvent()) {
                         data = decodeEventData(channel, in);
                     } else {
+                        //如果是正常的业务返回
                         DecodeableRpcResult result;
                         if (channel.getUrl().getParameter(
                                 Constants.DECODE_IN_IO_THREAD_KEY,
@@ -108,26 +116,35 @@ public class DubboCodec extends ExchangeCodec {
             }
             return res;
         } else {
+            //如果是请求的话
             // decode request.
             Request req = new Request(id);
             req.setVersion(Version.getProtocolVersion());
+            //双方通信的方式 有请求有返回
             req.setTwoWay((flag & FLAG_TWOWAY) != 0);
+            //如果请求是事件
             if ((flag & FLAG_EVENT) != 0) {
                 req.setEvent(true);
             }
             try {
                 Object data;
+                //进行反序列化
                 ObjectInput in = CodecSupport.deserialize(channel.getUrl(), is, proto);
+
+                //如果是心跳
                 if (req.isHeartbeat()) {
                     data = decodeHeartbeatData(channel, in);
                 } else if (req.isEvent()) {
+                    //如果是一个事件
                     data = decodeEventData(channel, in);
                 } else {
+                    //这部分就是Invocation
                     DecodeableRpcInvocation inv;
                     if (channel.getUrl().getParameter(
                             Constants.DECODE_IN_IO_THREAD_KEY,
                             Constants.DEFAULT_DECODE_IN_IO_THREAD)) {
                         inv = new DecodeableRpcInvocation(channel, req, is, proto);
+                        //进行解码
                         inv.decode();
                     } else {
                         inv = new DecodeableRpcInvocation(channel, req,
@@ -171,7 +188,7 @@ public class DubboCodec extends ExchangeCodec {
     @Override
     protected void encodeRequestData(Channel channel, ObjectOutput out, Object data, String version) throws IOException {
         RpcInvocation inv = (RpcInvocation) data;
-
+        //对于请求 进行编码操作
         out.writeUTF(version);
         out.writeUTF(inv.getAttachment(Constants.PATH_KEY));
         out.writeUTF(inv.getAttachment(Constants.VERSION_KEY));
@@ -189,6 +206,7 @@ public class DubboCodec extends ExchangeCodec {
 
     @Override
     protected void encodeResponseData(Channel channel, ObjectOutput out, Object data, String version) throws IOException {
+        //对于请求的响应 进行编码操作
         Result result = (Result) data;
         // currently, the version value in Response records the version of Request
         boolean attach = Version.isSupportResponseAttachment(version);

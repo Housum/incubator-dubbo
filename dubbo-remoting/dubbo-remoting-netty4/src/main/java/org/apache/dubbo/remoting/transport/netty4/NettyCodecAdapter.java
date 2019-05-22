@@ -86,9 +86,13 @@ final public class NettyCodecAdapter {
             try {
                 // decode object.
                 do {
+                    //开始读取数据的位置
                     int saveReaderIndex = message.readerIndex();
+                    //调用codec进行解码操作 这里解码出来的 后面的handler将会拿到解码出来的实体
                     Object msg = codec.decode(channel, message);
+                    //如果数据不完整的话 那么需要更多的数据
                     if (msg == Codec2.DecodeResult.NEED_MORE_INPUT) {
+                        //将readerIndex重新设置为之前的位置 下次写满数据之后就可以重新读到完整的数据了
                         message.readerIndex(saveReaderIndex);
                         break;
                     } else {
@@ -97,6 +101,7 @@ final public class NettyCodecAdapter {
                             throw new IOException("Decode without read data.");
                         }
                         if (msg != null) {
+                            //塞到out
                             out.add(msg);
                         }
                     }

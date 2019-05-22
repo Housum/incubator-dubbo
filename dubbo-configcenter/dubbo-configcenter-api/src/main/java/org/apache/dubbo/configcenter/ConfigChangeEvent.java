@@ -19,6 +19,7 @@ package org.apache.dubbo.configcenter;
 /**
  * Config change event, immutable.
  *
+ * @see org.apache.dubbo.configcenter.support.zookeeper.CacheListener#dataChanged(java.lang.String, java.lang.Object, org.apache.dubbo.remoting.zookeeper.EventType)
  * @see ConfigChangeType
  */
 public class ConfigChangeEvent {
@@ -28,6 +29,7 @@ public class ConfigChangeEvent {
     private final ConfigChangeType changeType;
 
     public ConfigChangeEvent(String key, String value) {
+        //默认为修改配置文件的事件
         this(key, value, ConfigChangeType.MODIFIED);
     }
 

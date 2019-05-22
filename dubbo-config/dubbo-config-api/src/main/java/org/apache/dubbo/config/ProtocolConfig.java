@@ -34,7 +34,8 @@ import java.util.Map;
 
 /**
  * ProtocolConfig
- *
+ * 形如 <dubbo:protocol name="dubbo" port="20890"/> 的配置
+ * @link http://dubbo.apache.org/zh-cn/docs/user/references/xml/dubbo-protocol.html
  * @export
  */
 public class ProtocolConfig extends AbstractConfig {

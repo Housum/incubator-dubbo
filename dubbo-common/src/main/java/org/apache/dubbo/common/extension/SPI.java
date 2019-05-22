@@ -50,6 +50,8 @@ import java.lang.annotation.Target;
  * Fails to load Extension("mina"). When user configure to use mina, dubbo will complain the extension cannot be loaded,
  * instead of reporting which extract extension implementation fails and the extract reason.
  * </p>
+ *
+ * dubbo的SPI接口都需要使用该注解
  */
 @Documented
 @Retention(RetentionPolicy.RUNTIME)

@@ -47,6 +47,9 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
+/**
+ * 将集群中所有的值进行合并,必须配置merger，如果没有配置的话 那么就随机选择一个
+ */
 @SuppressWarnings("unchecked")
 public class MergeableClusterInvoker<T> extends AbstractClusterInvoker<T> {
 
@@ -88,6 +91,7 @@ public class MergeableClusterInvoker<T> extends AbstractClusterInvoker<T> {
 
         Map<String, Future<Result>> results = new HashMap<String, Future<Result>>();
         for (final Invoker<T> invoker : invokers) {
+            //异步执行接口
             Future<Result> future = executor.submit(new Callable<Result>() {
                 @Override
                 public Result call() throws Exception {
@@ -132,6 +136,7 @@ public class MergeableClusterInvoker<T> extends AbstractClusterInvoker<T> {
             merger = merger.substring(1);
             Method method;
             try {
+                //如果是支持merge的话  那么返回值需要有这么一个方法 方法名为"merger",返回值需要一致
                 method = returnType.getMethod(merger, returnType);
             } catch (NoSuchMethodException e) {
                 throw new RpcException("Can not merge result because missing method [ " + merger + " ] in class [ " +
@@ -156,6 +161,7 @@ public class MergeableClusterInvoker<T> extends AbstractClusterInvoker<T> {
                 throw new RpcException("Can not merge result: " + e.getMessage(), e);
             }
         } else {
+            //如果是定义的Merger 那么进行获取
             Merger resultMerger;
             if (ConfigUtils.isDefault(merger)) {
                 resultMerger = MergerFactory.getMerger(returnType);

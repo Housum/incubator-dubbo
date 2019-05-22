@@ -30,6 +30,7 @@ import org.apache.dubbo.common.extension.ext1.SimpleExt;
 import org.apache.dubbo.common.extension.ext1.impl.SimpleExtImpl1;
 import org.apache.dubbo.common.extension.ext1.impl.SimpleExtImpl2;
 import org.apache.dubbo.common.extension.ext2.Ext2;
+import org.apache.dubbo.common.extension.ext2.UrlHolder;
 import org.apache.dubbo.common.extension.ext6_wrap.WrappedExt;
 import org.apache.dubbo.common.extension.ext6_wrap.impl.Ext5Wrapper1;
 import org.apache.dubbo.common.extension.ext6_wrap.impl.Ext5Wrapper2;
@@ -435,6 +436,37 @@ public class ExtensionLoaderTest {
         Assertions.assertNotNull(injectExtImpl.getSimpleExt());
         Assertions.assertNull(injectExtImpl.getSimpleExt1());
         Assertions.assertNull(injectExtImpl.getGenericType());
+    }
+
+    @Test
+    public void testExt2(){
+        //for load debug
+       Ext2 ext2 =  ExtensionLoader.getExtensionLoader(Ext2.class).getAdaptiveExtension();
+        /**
+         * 这里通过org.apache.dubbo.common.extension.AdaptiveClassCodeGenerator#generate()生成的code是：
+         * package org.apache.dubbo.common.extension.ext2;
+         * import org.apache.dubbo.common.extension.ExtensionLoader;
+         * public class Ext2$Adaptive implements org.apache.dubbo.common.extension.ext2.Ext2 {
+         *      public java.lang.String echo(org.apache.dubbo.common.extension.ext2.UrlHolder arg0, java.lang.String arg1)  {
+         *              if (arg0 == null) throw new IllegalArgumentException("org.apache.dubbo.common.extension.ext2.UrlHolder argument == null");
+         *              if (arg0.getUrl() == null) throw new IllegalArgumentException("org.apache.dubbo.common.extension.ext2.UrlHolder argument getUrl() == null");
+         *              org.apache.dubbo.common.URL url = arg0.getUrl();
+         *              String extName = url.getParameter("ext2");
+         *              if(extName == null) throw new IllegalStateException("Failed to get extension (org.apache.dubbo.common.extension.ext2.Ext2) name from url (" + url.toString() + ") use keys([ext2])");
+         *              org.apache.dubbo.common.extension.ext2.Ext2 extension = (org.apache.dubbo.common.extension.ext2.Ext2)ExtensionLoader.getExtensionLoader(org.apache.dubbo.common.extension.ext2.Ext2.class).getExtension(extName);
+         *              return extension.echo(arg0, arg1);
+         *       }
+         *      public java.lang.String bang(org.apache.dubbo.common.URL arg0, int arg1)  {
+         *          throw new UnsupportedOperationException("The method public abstract java.lang.String org.apache.dubbo.common.extension.ext2.Ext2.bang(org.apache.dubbo.common.URL,int) of interface org.apache.dubbo.common.extension.ext2.Ext2 is not adaptive method!");
+         *      }
+         * }
+         */
+
+        UrlHolder urlHolder = new UrlHolder();
+        //这里传入的是ext2=impl1 所以会去找SPI中的impl1
+        URL url = URL.valueOf("test://localhost/test?ext2=impl1");
+        urlHolder.setUrl(url);
+        Assertions.assertEquals("Ext2Impl1-echo",ext2.echo(urlHolder,"test"));
     }
 
 }

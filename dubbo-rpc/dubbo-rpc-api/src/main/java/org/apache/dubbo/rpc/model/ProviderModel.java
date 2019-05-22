@@ -25,6 +25,9 @@ import java.util.Map;
 
 /**
  * ProviderModel which is about published services
+ *
+ * 代表的是一个暴露的服务 用来进行发布服务的
+ * @see ApplicationModel
  */
 public class ProviderModel {
     private final String serviceName;

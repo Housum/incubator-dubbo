@@ -32,6 +32,8 @@ import java.util.Map;
 
 /**
  * InjvmProtocol
+ *
+ * 基于JVM的 不需要调用远程
  */
 public class InjvmProtocol extends AbstractProtocol implements Protocol {
 

@@ -29,6 +29,7 @@ public class DubboExporter<T> extends AbstractExporter<T> {
 
     private final String key;
 
+    //所有dubbo协议暴露的服务
     private final Map<String, Exporter<?>> exporterMap;
 
     public DubboExporter(Invoker<T> invoker, String key, Map<String, Exporter<?>> exporterMap) {

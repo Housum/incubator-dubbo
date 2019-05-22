@@ -42,11 +42,14 @@ import static java.util.concurrent.TimeUnit.MILLISECONDS;
 
 /**
  * NettyClient.
+ * netty 客户端实现
+ *
  */
 public class NettyClient extends AbstractClient {
 
     private static final Logger logger = LoggerFactory.getLogger(NettyClient.class);
 
+    //所有的请求还是都是使用的一个IO工作线程池进行处理
     private static final NioEventLoopGroup nioEventLoopGroup = new NioEventLoopGroup(Constants.DEFAULT_IO_THREADS, new DefaultThreadFactory("NettyClientWorker", true));
 
     private Bootstrap bootstrap;
@@ -54,6 +57,7 @@ public class NettyClient extends AbstractClient {
     private volatile Channel channel; // volatile, please copy reference to use
 
     public NettyClient(final URL url, final ChannelHandler handler) throws RemotingException {
+        //wrapChannelHandler(url, handler) 采用多线程的方式进行操作
         super(url, wrapChannelHandler(url, handler));
     }
 
@@ -91,6 +95,7 @@ public class NettyClient extends AbstractClient {
 
     @Override
     protected void doConnect() throws Throwable {
+        //进行连接操作
         long start = System.currentTimeMillis();
         ChannelFuture future = bootstrap.connect(getConnectAddress());
         try {
@@ -123,6 +128,7 @@ public class NettyClient extends AbstractClient {
                             NettyChannel.removeChannelIfDisconnected(newChannel);
                         }
                     } else {
+                        //保存netty的channel
                         NettyClient.this.channel = newChannel;
                     }
                 }

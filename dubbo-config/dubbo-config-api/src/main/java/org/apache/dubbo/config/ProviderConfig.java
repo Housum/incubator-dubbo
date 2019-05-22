@@ -31,9 +31,11 @@ import java.util.Arrays;
 /**
  * The service provider default configuration
  *
+ * 服务端的配置 配置 <dubbo:application name="demo-consumer"/> 的时候将会被生成该对象
  * @export
  * @see org.apache.dubbo.config.ProtocolConfig
  * @see org.apache.dubbo.config.ServiceConfig
+ * @link  http://dubbo.apache.org/zh-cn/docs/user/references/xml/dubbo-provider.html
  */
 public class ProviderConfig extends AbstractServiceConfig {
 

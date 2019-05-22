@@ -31,6 +31,9 @@ import java.io.OutputStream;
  * <pre>
  *     e.g. &lt;dubbo:protocol serialization="xxx" /&gt;
  * </pre>
+ *
+ * 序列化层 处于dubbo的最后一层,将报文序列化之后进行发送
+ *
  */
 @SPI("hessian2")
 public interface Serialization {

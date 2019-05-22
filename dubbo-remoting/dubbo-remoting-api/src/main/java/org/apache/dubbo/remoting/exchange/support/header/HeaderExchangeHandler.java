@@ -59,6 +59,8 @@ public class HeaderExchangeHandler implements ChannelHandlerDelegate {
 
     static void handleResponse(Channel channel, Response response) throws RemotingException {
         if (response != null && !response.isHeartbeat()) {
+            //请求的时候直接返回的是Future,@see org.apache.dubbo.remoting.exchange.support.header.HeaderExchangeChannel.request(java.lang.Object, int)
+            //没有设置返回值,这里将返回值进行设置
             DefaultFuture.received(channel, response);
         }
     }
@@ -77,8 +79,14 @@ public class HeaderExchangeHandler implements ChannelHandlerDelegate {
         }
     }
 
+    /**
+     * 处理远程的请求
+     */
     void handleRequest(final ExchangeChannel channel, Request req) throws RemotingException {
+        //返回结果 带上请求的ID
         Response res = new Response(req.getId(), req.getVersion());
+
+        //如果是一个处理失败的请求
         if (req.isBroken()) {
             Object data = req.getData();
 
@@ -92,7 +100,7 @@ public class HeaderExchangeHandler implements ChannelHandlerDelegate {
             }
             res.setErrorMessage("Fail to decode request due to: " + msg);
             res.setStatus(Response.BAD_REQUEST);
-
+            //ExchangeChannel -> NettyChannel -> Channel(natty native)
             channel.send(res);
             return;
         }

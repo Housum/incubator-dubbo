@@ -19,6 +19,8 @@ package org.apache.dubbo.rpc.service;
 /**
  * Generic service interface
  *
+ * 范型服务和引用
+ * @link https://www.cnblogs.com/notlate/p/10127942.html
  * @export
  */
 public interface GenericService {

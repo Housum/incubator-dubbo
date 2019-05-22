@@ -53,13 +53,17 @@ public class InvokerInvocationHandler implements InvocationHandler {
         if ("equals".equals(methodName) && parameterTypes.length == 1) {
             return invoker.equals(args[0]);
         }
-
+        //进行远程调用
         return invoker.invoke(createInvocation(method, args)).recreate();
     }
 
     private RpcInvocation createInvocation(Method method, Object[] args) {
+        //创建会话域
         RpcInvocation invocation = new RpcInvocation(method, args);
+
+        //如果方法的返回类型是Future,如果是的话 那么是一个异步的请求
         if (RpcUtils.hasFutureReturnType(method)) {
+            //@see org.apache.dubbo.rpc.protocol.dubbo.DubboInvoker.doInvoke
             invocation.setAttachment(Constants.FUTURE_RETURNTYPE_KEY, "true");
             invocation.setAttachment(Constants.ASYNC_KEY, "true");
         }

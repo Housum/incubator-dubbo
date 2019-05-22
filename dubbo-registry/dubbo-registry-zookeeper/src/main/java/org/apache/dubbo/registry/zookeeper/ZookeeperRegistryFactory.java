@@ -23,7 +23,7 @@ import org.apache.dubbo.remoting.zookeeper.ZookeeperTransporter;
 
 /**
  * ZookeeperRegistryFactory.
- *
+ * zookeeper注册中心工厂
  */
 public class ZookeeperRegistryFactory extends AbstractRegistryFactory {
 
@@ -31,6 +31,7 @@ public class ZookeeperRegistryFactory extends AbstractRegistryFactory {
 
     /**
      * Invisible injection of zookeeper client via IOC/SPI
+     *
      * @param zookeeperTransporter
      */
     public void setZookeeperTransporter(ZookeeperTransporter zookeeperTransporter) {
@@ -39,6 +40,7 @@ public class ZookeeperRegistryFactory extends AbstractRegistryFactory {
 
     @Override
     public Registry createRegistry(URL url) {
+        //注册中心
         return new ZookeeperRegistry(url, zookeeperTransporter);
     }
 

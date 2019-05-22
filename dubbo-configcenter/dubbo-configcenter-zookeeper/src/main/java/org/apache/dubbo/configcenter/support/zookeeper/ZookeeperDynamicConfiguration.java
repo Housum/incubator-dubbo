@@ -34,7 +34,7 @@ import java.util.concurrent.Executors;
 import static org.apache.dubbo.common.Constants.CONFIG_NAMESPACE_KEY;
 
 /**
- *
+ * zookeeper 动态配置中心
  */
 public class ZookeeperDynamicConfiguration implements DynamicConfiguration {
     private static final Logger logger = LoggerFactory.getLogger(ZookeeperDynamicConfiguration.class);
@@ -49,18 +49,26 @@ public class ZookeeperDynamicConfiguration implements DynamicConfiguration {
     private URL url;
 
 
+    /**
+     * @param url 配置中心的地址
+     * @param zookeeperTransporter
+     */
     ZookeeperDynamicConfiguration(URL url, ZookeeperTransporter zookeeperTransporter) {
         this.url = url;
+        //namespace = /dubbo/config
         rootPath = "/" + url.getParameter(CONFIG_NAMESPACE_KEY, DEFAULT_GROUP) + "/config";
 
         initializedLatch = new CountDownLatch(1);
+        //如果在"/dubbo/config"这个目录下面有配置进行修改的话 那么将被触发
         this.cacheListener = new CacheListener(rootPath, initializedLatch);
         this.executor = Executors.newFixedThreadPool(1, new NamedThreadFactory(this.getClass().getSimpleName(), true));
 
         zkClient = zookeeperTransporter.connect(url);
+        //监听"/dubbo/config"的配置修改 如果配置被修改了 那么cacheListener会监听到
         zkClient.addDataListener(rootPath, cacheListener, executor);
         try {
             // Wait for connection
+            //懒加载 只有等"/dubbo/config"目录被初始化了才会执行下去
             this.initializedLatch.await();
         } catch (InterruptedException e) {
             logger.warn("Failed to build local cache for config center (zookeeper)." + url);
@@ -91,14 +99,14 @@ public class ZookeeperDynamicConfiguration implements DynamicConfiguration {
 
     @Override
     public String getConfig(String key, String group, long timeout) throws IllegalStateException {
-        /**
+        /*
          * when group is not null, we are getting startup configs from Config Center, for example:
          * group=dubbo, key=dubbo.properties
          */
         if (StringUtils.isNotEmpty(group)) {
             key = group + "/" + key;
         }
-        /**
+        /*
          * when group is null, we are fetching governance rules, for example:
          * 1. key=org.apache.dubbo.DemoService.configurators
          * 2. key = org.apache.dubbo.DemoService.condition-router

@@ -18,6 +18,7 @@ package org.apache.dubbo.common.config;
 
 /**
  * Configuration interface, to fetch the value for the specified key.
+ * 获取指定key的配置值
  */
 public interface Configuration {
     /**

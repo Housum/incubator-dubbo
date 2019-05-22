@@ -208,6 +208,7 @@ class URL implements Serializable {
             }
             url = url.substring(0, i);
         }
+        //获取协议 比如：zookeeper://127.0.0.1:2181
         i = url.indexOf("://");
         if (i >= 0) {
             if (i == 0) {
@@ -227,6 +228,7 @@ class URL implements Serializable {
             }
         }
 
+        //获取path 这里可能出现/path的情况 后面后进行处理
         i = url.indexOf("/");
         if (i >= 0) {
             path = url.substring(i + 1);

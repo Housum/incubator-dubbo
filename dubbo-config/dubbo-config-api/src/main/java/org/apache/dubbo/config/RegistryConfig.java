@@ -25,7 +25,10 @@ import java.util.Map;
 /**
  * RegistryConfig
  *
+ * 形如:<dubbo:registry address="zookeeper://127.0.0.1:2181"/> 标签
+ *
  * @export
+ * @link http://dubbo.apache.org/zh-cn/docs/user/references/xml/dubbo-registry.html
  */
 public class RegistryConfig extends AbstractConfig {
 
@@ -54,6 +57,7 @@ public class RegistryConfig extends AbstractConfig {
 
     /**
      * Protocol for register center
+     *
      */
     private String protocol;
 

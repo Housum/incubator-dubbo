@@ -28,6 +28,10 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * ConfigCenterConfig
+ *
+ * 形如 <dubbo:config-center/>
+ *
+ * @link http://dubbo.apache.org/zh-cn/docs/user/references/xml/dubbo-config-center.html
  */
 public class ConfigCenterConfig extends AbstractConfig {
     private AtomicBoolean inited = new AtomicBoolean(false);
@@ -60,6 +64,7 @@ public class ConfigCenterConfig extends AbstractConfig {
         }
         map.put(Constants.PATH_KEY, ConfigCenterConfig.class.getSimpleName());
         // use 'zookeeper' as the default configcenter.
+        //如果不存在的话 那么默认使用zookeeper作为配置中心的协议
         if (StringUtils.isEmpty(map.get(Constants.PROTOCOL_KEY))) {
             map.put(Constants.PROTOCOL_KEY, Constants.ZOOKEEPER_PROTOCOL);
         }

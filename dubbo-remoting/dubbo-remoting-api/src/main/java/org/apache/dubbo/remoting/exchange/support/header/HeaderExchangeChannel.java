@@ -35,6 +35,7 @@ import java.net.InetSocketAddress;
 
 /**
  * ExchangeReceiver
+ * exchange 处理器
  */
 final class HeaderExchangeChannel implements ExchangeChannel {
 
@@ -107,12 +108,15 @@ final class HeaderExchangeChannel implements ExchangeChannel {
             throw new RemotingException(this.getLocalAddress(), null, "Failed to send request " + request + ", cause: The channel " + this + " is closed!");
         }
         // create request.
+        //创建一个请求
         Request req = new Request();
         req.setVersion(Version.getProtocolVersion());
         req.setTwoWay(true);
         req.setData(request);
+        //将请求记录下来 等待异步返回
         DefaultFuture future = DefaultFuture.newFuture(channel, req, timeout);
         try {
+            //调用transport层向remote发送消息
             channel.send(req);
         } catch (RemotingException e) {
             future.cancel();

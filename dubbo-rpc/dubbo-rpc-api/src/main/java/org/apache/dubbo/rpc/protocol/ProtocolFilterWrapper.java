@@ -32,6 +32,9 @@ import java.util.List;
 
 /**
  * ListenerProtocol
+ * Dubbo的调用扩展点 Filter机制 Invoker执行前后执行
+ * 在org.apache.dubbo.rpc.protocol.ProtocolListenerWrapper中被织
+ * 入到了其他的Protocol
  */
 public class ProtocolFilterWrapper implements Protocol {
 
@@ -46,11 +49,13 @@ public class ProtocolFilterWrapper implements Protocol {
 
     private static <T> Invoker<T> buildInvokerChain(final Invoker<T> invoker, String key, String group) {
         Invoker<T> last = invoker;
+        //加载所有的
         List<Filter> filters = ExtensionLoader.getExtensionLoader(Filter.class).getActivateExtension(invoker.getUrl(), key, group);
         if (!filters.isEmpty()) {
             for (int i = filters.size() - 1; i >= 0; i--) {
                 final Filter filter = filters.get(i);
                 final Invoker<T> next = last;
+                //将所有过滤器都加入进去
                 last = new Invoker<T>() {
 
                     @Override
@@ -100,19 +105,24 @@ public class ProtocolFilterWrapper implements Protocol {
         return protocol.getDefaultPort();
     }
 
+    //在Protocol暴露服务的时候 进行AOP编程 将拦截器给加进去
     @Override
     public <T> Exporter<T> export(Invoker<T> invoker) throws RpcException {
+        //对于服务注册地址的情况下 不需要执行过滤 其他的情况都是需要的(RegistryProtocol)
         if (Constants.REGISTRY_PROTOCOL.equals(invoker.getUrl().getProtocol())) {
             return protocol.export(invoker);
         }
+        //group 为provider 可以在url中指定service.filter的值设置过滤器 同时通过添加-default排一些默认的
         return protocol.export(buildInvokerChain(invoker, Constants.SERVICE_FILTER_KEY, Constants.PROVIDER));
     }
 
     @Override
     public <T> Invoker<T> refer(Class<T> type, URL url) throws RpcException {
+        //RegistryProtocol 不进行过滤
         if (Constants.REGISTRY_PROTOCOL.equals(url.getProtocol())) {
             return protocol.refer(type, url);
         }
+        //group 为provider 可以在url中指定consumer.filter的值设置过滤器 同时通过添加-default排一些默认的
         return buildInvokerChain(protocol.refer(type, url), Constants.REFERENCE_FILTER_KEY, Constants.CONSUMER);
     }
 

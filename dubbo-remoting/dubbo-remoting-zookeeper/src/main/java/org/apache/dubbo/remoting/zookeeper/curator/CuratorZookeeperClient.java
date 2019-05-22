@@ -250,7 +250,9 @@ public class CuratorZookeeperClient extends AbstractZookeeperClient<CuratorZooke
     static class CuratorWatcherImpl implements CuratorWatcher, TreeCacheListener {
 
         private CuratorFramework client;
+        //关联的childListener
         private volatile ChildListener childListener;
+        //关联的dataListener
         private volatile DataListener dataListener;
 
 

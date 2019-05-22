@@ -31,6 +31,12 @@ import java.util.concurrent.ConcurrentMap;
  * and many Consumer Model which is about subscribed services.
  *
  * adjust project structure in order to fully utilize the methods introduced here.
+ *
+ * 主要就是保存了需要暴露的服务和需要订阅的服务
+ *
+ * @see ProviderModel
+ * @see ConsumerModel
+ *
  */
 public class ApplicationModel {
 

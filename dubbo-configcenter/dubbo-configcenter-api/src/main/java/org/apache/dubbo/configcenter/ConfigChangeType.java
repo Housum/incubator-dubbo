@@ -18,6 +18,8 @@ package org.apache.dubbo.configcenter;
 
 /**
  * Config change event type
+ *
+ * 配置事件 
  */
 public enum ConfigChangeType {
     /**

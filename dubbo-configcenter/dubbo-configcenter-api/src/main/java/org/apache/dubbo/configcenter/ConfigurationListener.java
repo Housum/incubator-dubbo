@@ -18,6 +18,8 @@ package org.apache.dubbo.configcenter;
 
 /**
  * Config listener, will get notified when the config it listens on changes.
+ * 配置监听器 当监听的配置被修改之后 将会被触发事件
+ *
  */
 public interface ConfigurationListener {
 

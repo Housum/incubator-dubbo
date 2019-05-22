@@ -70,6 +70,7 @@ public class RpcUtils {
         try {
             if (invocation != null && invocation.getInvoker() != null
                     && invocation.getInvoker().getUrl() != null
+                    //防止是GenericService
                     && !invocation.getMethodName().startsWith("$")) {
                 String service = invocation.getInvoker().getUrl().getServiceInterface();
                 if (StringUtils.isNotEmpty(service)) {
@@ -82,6 +83,7 @@ public class RpcUtils {
                     }
                     Class<?> returnType = method.getReturnType();
                     Type genericReturnType = method.getGenericReturnType();
+                    //dubbo 3.0
                     if (Future.class.isAssignableFrom(returnType)) {
                         if (genericReturnType instanceof ParameterizedType) {
                             Type actualArgType = ((ParameterizedType) genericReturnType).getActualTypeArguments()[0];
@@ -114,8 +116,7 @@ public class RpcUtils {
     /**
      * Idempotent operation: invocation id will be added in async operation by default
      *
-     * @param url
-     * @param inv
+     *异步操作下 需要增加一个标示ID,TODO 这里值得幂等操作是啥？
      */
     public static void attachInvocationIdIfAsync(URL url, Invocation inv) {
         if (isAttachInvocationId(url, inv) && getInvocationId(inv) == null && inv instanceof RpcInvocation) {
@@ -136,6 +137,7 @@ public class RpcUtils {
     }
 
     public static String getMethodName(Invocation invocation) {
+        //范型服务
         if (Constants.$INVOKE.equals(invocation.getMethodName())
                 && invocation.getArguments() != null
                 && invocation.getArguments().length > 0

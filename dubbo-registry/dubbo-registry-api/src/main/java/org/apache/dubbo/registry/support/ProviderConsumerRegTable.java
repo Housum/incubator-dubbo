@@ -33,6 +33,8 @@ import java.util.concurrent.ConcurrentMap;
  * @date 2017/11/23
  */
 public class ProviderConsumerRegTable {
+
+    //serviceName = Invoker, ProviderInvokerWrapper
     public static ConcurrentHashMap<String, ConcurrentMap<Invoker, ProviderInvokerWrapper>> providerInvokers = new ConcurrentHashMap<>();
     public static ConcurrentHashMap<String, Set<ConsumerInvokerWrapper>> consumerInvokers = new ConcurrentHashMap<>();
 

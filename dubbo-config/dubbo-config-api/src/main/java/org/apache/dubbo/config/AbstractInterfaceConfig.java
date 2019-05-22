@@ -22,13 +22,7 @@ import org.apache.dubbo.common.URLBuilder;
 import org.apache.dubbo.common.Version;
 import org.apache.dubbo.common.config.Environment;
 import org.apache.dubbo.common.extension.ExtensionLoader;
-import org.apache.dubbo.common.utils.Assert;
-import org.apache.dubbo.common.utils.CollectionUtils;
-import org.apache.dubbo.common.utils.ConfigUtils;
-import org.apache.dubbo.common.utils.NetUtils;
-import org.apache.dubbo.common.utils.ReflectUtils;
-import org.apache.dubbo.common.utils.StringUtils;
-import org.apache.dubbo.common.utils.UrlUtils;
+import org.apache.dubbo.common.utils.*;
 import org.apache.dubbo.config.context.ConfigManager;
 import org.apache.dubbo.config.support.Parameter;
 import org.apache.dubbo.configcenter.DynamicConfiguration;
@@ -45,13 +39,7 @@ import org.apache.dubbo.rpc.model.ApplicationModel;
 import org.apache.dubbo.rpc.support.MockInvoker;
 
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 import static org.apache.dubbo.common.config.ConfigurationUtils.parseProperties;
 import static org.apache.dubbo.common.extension.ExtensionLoader.getExtensionLoader;
@@ -159,17 +147,20 @@ public abstract class AbstractInterfaceConfig extends AbstractMethodConfig {
      * Check whether the registry config is exists, and then conversion it to {@link RegistryConfig}
      */
     protected void checkRegistry() {
+        //如果当前register不存在的话 从配置属性中初始化一个 从系统属性的dubbo.registry.address指定的值为注册中心、进行加载
         loadRegistriesFromBackwardConfig();
 
         convertRegistryIdsToRegistries();
 
         for (RegistryConfig registryConfig : registries) {
+            //如果配置文件不存在的话 那么抛出异常 在dubbo中大部分配置都能自己创建  但是显然注册中心是不能主动创建的
             if (!registryConfig.isValid()) {
                 throw new IllegalStateException("No registry config found or it's not a valid config! " +
                         "The registry config is: " + registryConfig);
             }
         }
 
+        //如果可以使用注册中心的中间件作为服务配置中心的话(即config-center)
         useRegistryForConfigIfNecessary();
     }
 
@@ -235,15 +226,18 @@ public abstract class AbstractInterfaceConfig extends AbstractMethodConfig {
 
 
     void startConfigCenter() {
+        //如果这里是zk为注册中心的话 不会为空 将会将zk作为配置重新来使用
+        //@see org.apache.dubbo.config.AbstractInterfaceConfig.checkRegistry
         if (configCenter == null) {
             ConfigManager.getInstance().getConfigCenter().ifPresent(cc -> this.configCenter = cc);
         }
-
+        //如果存在环境中心的话
         if (this.configCenter != null) {
             // TODO there may have duplicate refresh
             this.configCenter.refresh();
             prepareEnvironment();
         }
+
         ConfigManager.getInstance().refreshAll();
     }
 
@@ -252,6 +246,8 @@ public abstract class AbstractInterfaceConfig extends AbstractMethodConfig {
             if (!configCenter.checkOrUpdateInited()) {
                 return;
             }
+
+            //这里toUrl默认返回的protocol是zk
             DynamicConfiguration dynamicConfiguration = getDynamicConfiguration(configCenter.toUrl());
             String configContent = dynamicConfiguration.getConfig(configCenter.getConfigFile(), configCenter.getGroup());
 
@@ -260,7 +256,7 @@ public abstract class AbstractInterfaceConfig extends AbstractMethodConfig {
             if (StringUtils.isNotEmpty(appGroup)) {
                 appConfigContent = dynamicConfiguration.getConfig
                         (StringUtils.isNotEmpty(configCenter.getAppConfigFile()) ? configCenter.getAppConfigFile() : configCenter.getConfigFile(),
-                         appGroup
+                                appGroup
                         );
             }
             try {
@@ -274,16 +270,20 @@ public abstract class AbstractInterfaceConfig extends AbstractMethodConfig {
     }
 
     private DynamicConfiguration getDynamicConfiguration(URL url) {
+        //默认zookeeper @see org.apache.dubbo.config.ConfigCenterConfig.toUrl
+        //@link http://dubbo.apache.org/zh-cn/docs/user/references/xml/dubbo-config-center.html  #protocol
+        //默认这里获取的是org.apache.dubbo.configcenter.support.zookeeper.ZookeeperDynamicConfigurationFactory
+        //（通过URL中的protocol从SPI中获取）
         DynamicConfigurationFactory factories = ExtensionLoader
                 .getExtensionLoader(DynamicConfigurationFactory.class)
                 .getExtension(url.getProtocol());
         DynamicConfiguration configuration = factories.getDynamicConfiguration(url);
+        //设置动态配置
         Environment.getInstance().setDynamicConfiguration(configuration);
         return configuration;
     }
 
     /**
-     *
      * Load the registry and conversion it to {@link URL}, the priority order is: system property > dubbo registry config
      *
      * @param provider whether it is the provider side
@@ -291,31 +291,51 @@ public abstract class AbstractInterfaceConfig extends AbstractMethodConfig {
      */
     protected List<URL> loadRegistries(boolean provider) {
         // check && override if necessary
-        List<URL> registryList = new ArrayList<URL>();
+        List<URL> registryList = new ArrayList<>();
         if (CollectionUtils.isNotEmpty(registries)) {
             for (RegistryConfig config : registries) {
                 String address = config.getAddress();
+                //如果register的address为空的话  那么这里设置为0.0.0.0
                 if (StringUtils.isEmpty(address)) {
                     address = Constants.ANYHOST_VALUE;
                 }
+                //如果注册中心设置的不是 N/A
                 if (!RegistryConfig.NO_AVAILABLE.equalsIgnoreCase(address)) {
-                    Map<String, String> map = new HashMap<String, String>();
+
+                    //缺省的属性
+                    Map<String, String> map = new HashMap<>();
+
+                    //以下是将application和config注解了Parameter的属性获取出来 这部分将作为注册地址的参数部分
                     appendParameters(map, application);
                     appendParameters(map, config);
+                    //path = com.alibaba.dubbo.registry.RegistryService
                     map.put(Constants.PATH_KEY, RegistryService.class.getName());
+                    //获取动态参数 dubbo版本 软件版本 时间戳 pid
                     appendRuntimeParameters(map);
+                    //协议 如果从application和config没有获取到应用层协议 那么默认设置的协议是dubbo协议 这里存储的是rpc使用的协议
+                    //即配置中的protocol @link http://dubbo.apache.org/zh-cn/docs/user/references/protocol/introduction.html
                     if (!map.containsKey(Constants.PROTOCOL_KEY)) {
                         map.put(Constants.PROTOCOL_KEY, Constants.DUBBO_PROTOCOL);
                     }
+                    //将地址解析成URL
                     List<URL> urls = UrlUtils.parseURLs(address, map);
 
+                    //再加上其他的一些参数
                     for (URL url : urls) {
                         url = URLBuilder.from(url)
+                                //这里的url.getProtocol()获取的是URL的协议 注意这里和<dubbo:protocol>中的
+                                //协议指的不是一个东西 <dubbo:protocol>指的是RPC通信协议(dubbo,http等应用层协议)
                                 .addParameter(Constants.REGISTRY_KEY, url.getProtocol())
+                                //这里设置protocol是为了在后面执行org.apache.dubbo.rpc.Protocol.export 找到指定的RegistryProtocol
                                 .setProtocol(Constants.REGISTRY_PROTOCOL)
                                 .build();
+
+                        //register = true 才会进行注册
                         if ((provider && url.getParameter(Constants.REGISTER_KEY, true))
                                 || (!provider && url.getParameter(Constants.SUBSCRIBE_KEY, true))) {
+                            //最后拼接成完整的注册地址
+                            // URL = register://ip:port/com.alibaba.dubbo.registry.RegistryService?key=val&key1=val1 其中"?"为map中的参数 将其拼接到参数部分
+                            //这部分拼接的参数保存了所有在<dubbo:application>和<dubbo:register>中配置
                             registryList.add(url);
                         }
                     }
@@ -326,7 +346,6 @@ public abstract class AbstractInterfaceConfig extends AbstractMethodConfig {
     }
 
     /**
-     *
      * Load the monitor config from the system properties and conversation it to {@link URL}
      *
      * @param registryURL
@@ -335,14 +354,18 @@ public abstract class AbstractInterfaceConfig extends AbstractMethodConfig {
     protected URL loadMonitor(URL registryURL) {
         checkMonitor();
         Map<String, String> map = new HashMap<String, String>();
+        //org.apache.dubbo.monitor.MonitorService
         map.put(Constants.INTERFACE_KEY, MonitorService.class.getName());
         appendRuntimeParameters(map);
-        //set ip
+        //set ip 设置服务的IP
         String hostToRegistry = ConfigUtils.getSystemProperty(Constants.DUBBO_IP_TO_REGISTRY);
         if (StringUtils.isEmpty(hostToRegistry)) {
+            //如果不存在的话 那么设置为本地的地址
             hostToRegistry = NetUtils.getLocalHost();
         }
+        //register.ip 本地注册的地址
         map.put(Constants.REGISTER_IP_KEY, hostToRegistry);
+        //将application和monitor的地址加到url的参数部分
         appendParameters(map, monitor);
         appendParameters(map, application);
         String address = monitor.getAddress();
@@ -351,6 +374,7 @@ public abstract class AbstractInterfaceConfig extends AbstractMethodConfig {
             address = sysaddress;
         }
         if (ConfigUtils.isNotEmpty(address)) {
+            //如果监控地址存在的话 进行设置监控协议
             if (!map.containsKey(Constants.PROTOCOL_KEY)) {
                 if (getExtensionLoader(MonitorFactory.class).hasExtension(Constants.LOGSTAT_PROTOCOL)) {
                     map.put(Constants.PROTOCOL_KEY, Constants.LOGSTAT_PROTOCOL);
@@ -359,7 +383,9 @@ public abstract class AbstractInterfaceConfig extends AbstractMethodConfig {
                 }
             }
             return UrlUtils.parseURL(address, map);
+
         } else if (Constants.REGISTRY_PROTOCOL.equals(monitor.getProtocol()) && registryURL != null) {
+            //监控中心协议，如果为protocol="registry"，表示从注册中心发现监控中心地址，否则直连监控中心
             return URLBuilder.from(registryURL)
                     .setProtocol(Constants.DUBBO_PROTOCOL)
                     .addParameter(Constants.PROTOCOL_KEY, Constants.REGISTRY_PROTOCOL)
@@ -399,9 +425,11 @@ public abstract class AbstractInterfaceConfig extends AbstractMethodConfig {
     /**
      * Check whether the remote service interface and the methods meet with Dubbo's requirements.it mainly check, if the
      * methods configured in the configuration file are included in the interface of remote service
+     * <p>
+     * 检查远程方法 的接口和方法的对应关系以及相关属性的检查 service和reference公用
      *
      * @param interfaceClass the interface of remote service
-     * @param methods the methods configured
+     * @param methods        the methods configured
      */
     protected void checkInterfaceAndMethods(Class<?> interfaceClass, List<MethodConfig> methods) {
         // interface cannot be null
@@ -412,6 +440,7 @@ public abstract class AbstractInterfaceConfig extends AbstractMethodConfig {
             throw new IllegalStateException("The interface class " + interfaceClass + " is not a interface!");
         }
         // check if methods exist in the remote service interface
+        //如果methods存在的话 那么进行检查
         if (CollectionUtils.isNotEmpty(methods)) {
             for (MethodConfig methodBean : methods) {
                 methodBean.setService(interfaceClass.getName());
@@ -424,6 +453,7 @@ public abstract class AbstractInterfaceConfig extends AbstractMethodConfig {
                             "<dubbo:method name=\"\" ... /></<dubbo:reference>");
                 }
 
+                //检查是否存在该方法
                 boolean hasMethod = Arrays.stream(interfaceClass.getMethods()).anyMatch(method -> method.getName().equals(methodName));
                 if (!hasMethod) {
                     throw new IllegalStateException("The interface " + interfaceClass.getName()
@@ -468,6 +498,7 @@ public abstract class AbstractInterfaceConfig extends AbstractMethodConfig {
             }
         } else {
             //Check whether the mock class is a implementation of the interfaceClass, and if it has a default constructor
+            //这里将就检查ServiceMock是否存在
             MockInvoker.getMockObject(normalizedMock, interfaceClass);
         }
     }
@@ -517,16 +548,17 @@ public abstract class AbstractInterfaceConfig extends AbstractMethodConfig {
             registryIds = String.join(Constants.COMMA_SEPARATOR, configedRegistries);
         }
 
+        //如果注册中心为空
         if (StringUtils.isEmpty(registryIds)) {
             if (CollectionUtils.isEmpty(registries)) {
                 setRegistries(
                         ConfigManager.getInstance().getDefaultRegistries()
-                        .filter(CollectionUtils::isNotEmpty)
-                        .orElseGet(() -> {
-                            RegistryConfig registryConfig = new RegistryConfig();
-                            registryConfig.refresh();
-                            return Arrays.asList(registryConfig);
-                        })
+                                .filter(CollectionUtils::isNotEmpty)
+                                .orElseGet(() -> {
+                                    RegistryConfig registryConfig = new RegistryConfig();
+                                    registryConfig.refresh();
+                                    return Arrays.asList(registryConfig);
+                                })
                 );
             }
         } else {
@@ -577,6 +609,7 @@ public abstract class AbstractInterfaceConfig extends AbstractMethodConfig {
      * there's no config center specified explicitly.
      */
     private void useRegistryForConfigIfNecessary() {
+        //如果是zookeeper的话 那么使用该zookeeper作为配置中间储存
         registries.stream().filter(RegistryConfig::isZookeeperProtocol).findFirst().ifPresent(rc -> {
             // we use the loading status of DynamicConfiguration to decide whether ConfigCenter has been initiated.
             Environment.getInstance().getDynamicConfiguration().orElseGet(() -> {
@@ -710,6 +743,7 @@ public abstract class AbstractInterfaceConfig extends AbstractMethodConfig {
             return;
         }
         ConfigManager configManager = ConfigManager.getInstance();
+        //如果不存在application的话 那么初始化一个
         setApplication(
                 configManager
                         .getApplication()

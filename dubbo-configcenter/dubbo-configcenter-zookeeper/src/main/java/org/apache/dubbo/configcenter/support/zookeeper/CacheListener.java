@@ -37,6 +37,7 @@ import java.util.concurrent.CountDownLatch;
 public class CacheListener implements DataListener {
     private static final int MIN_PATH_DEPTH = 5;
 
+    //这部分监听器在配置文件被修改的情况下 会被触发
     private Map<String, Set<ConfigurationListener>> keyListeners = new ConcurrentHashMap<>();
     private CountDownLatch initializedLatch;
     private String rootPath;
@@ -79,6 +80,7 @@ public class CacheListener implements DataListener {
             return;
         }
 
+        //初始化事件 @see org.apache.dubbo.configcenter.support.zookeeper.ZookeeperDynamicConfiguration.ZookeeperDynamicConfiguration
         if (eventType == EventType.INITIALIZED) {
             initializedLatch.countDown();
             return;
@@ -109,6 +111,7 @@ public class CacheListener implements DataListener {
             }
 
             ConfigChangeEvent configChangeEvent = new ConfigChangeEvent(key, (String) value, changeType);
+            //从配置中找到对于的path的ConfigurationListener
             Set<ConfigurationListener> listeners = keyListeners.get(key);
             if (CollectionUtils.isNotEmpty(listeners)) {
                 listeners.forEach(listener -> listener.process(configChangeEvent));

@@ -41,6 +41,7 @@ public class DefaultTPSLimiter implements TPSLimiter {
         if (rate > 0) {
             StatItem statItem = stats.get(serviceKey);
             if (statItem == null) {
+                //rate=限流数量,interval=周期单位豪秒 比如每秒 800的tps 那么设置为 rate=800 interval=1000
                 stats.putIfAbsent(serviceKey, new StatItem(serviceKey, rate, interval));
                 statItem = stats.get(serviceKey);
             } else {

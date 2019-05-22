@@ -23,12 +23,20 @@ import java.util.concurrent.Executor;
 
 public interface ZookeeperClient {
 
+    /**
+     * 创建目录 如果已经存在的话 那么不会有感知
+     * @param path
+     * @param ephemeral
+     */
     void create(String path, boolean ephemeral);
 
     void delete(String path);
 
     List<String> getChildren(String path);
 
+    /**
+     * 返回path的子目录
+     */
     List<String> addChildListener(String path, ChildListener listener);
 
     /**

@@ -95,6 +95,9 @@ public class AdaptiveClassCodeGenerator {
         code.append(generateClassDeclaration());
         
         Method[] methods = type.getMethods();
+
+        //对于类中具有注释org.apache.dubbo.common.extension.Adaptive的将会被生成代理方法 其他的方式将会抛出
+        //UnsupportedOperationException
         for (Method method : methods) {
             code.append(generateMethod(method));
         }
@@ -200,19 +203,25 @@ public class AdaptiveClassCodeGenerator {
         if (adaptiveAnnotation == null) {
             return generateUnsupported(method);
         } else {
+            //因为后面需要从URL参数中获取指定参数的值 所以从方法的参数列表中获取到URL参数的索引列
             int urlTypeIndex = getUrlTypeIndex(method);
-            
+
+            //如果方法参数中没有URL 那么将抛出异常
             // found parameter in URL type
             if (urlTypeIndex != -1) {
                 // Null Point check
                 code.append(generateUrlNullCheck(urlTypeIndex));
             } else {
+                //如果在直接参数中没有找到URL 那么尝试从参数的属性中查询是否有URL
                 // did not find parameter in URL type
                 code.append(generateUrlAssignmentIndirectly(method));
             }
 
+            //获取指定扩展点的名字 如果不存在的话 那么按照驼峰法分解的名称 比如:如果Adaptive注解
+            //没有指定
             String[] value = getMethodAdaptiveValue(adaptiveAnnotation);
 
+            //检查是否有org.apache.dubbo.rpc.Invocation参数
             boolean hasInvocation = hasInvocationArgument(method);
             
             code.append(generateInvocationArgumentNullCheck(method));
@@ -245,7 +254,9 @@ public class AdaptiveClassCodeGenerator {
         String getNameCode = null;
         for (int i = value.length - 1; i >= 0; --i) {
             if (i == value.length - 1) {
+                //如果有默认的值 注解"SPI"中定义的
                 if (null != defaultExtName) {
+                    //这里针对协议 进行特殊处理
                     if (!"protocol".equals(value[i])) {
                         if (hasInvocation) {
                             getNameCode = String.format("url.getMethodParameter(methodName, \"%s\", \"%s\")", value[i], defaultExtName);
@@ -253,6 +264,7 @@ public class AdaptiveClassCodeGenerator {
                             getNameCode = String.format("url.getParameter(\"%s\", \"%s\")", value[i], defaultExtName);
                         }
                     } else {
+                        //获取协议
                         getNameCode = String.format("( url.getProtocol() == null ? \"%s\" : url.getProtocol() )", defaultExtName);
                     }
                 } else {
@@ -324,7 +336,10 @@ public class AdaptiveClassCodeGenerator {
     private String[] getMethodAdaptiveValue(Adaptive adaptiveAnnotation) {
         String[] value = adaptiveAnnotation.value();
         // value is not set, use the value generated from class name as the key
+
+        //如果没有设置"Adaptive的"的key 那么将类名按照驼峰法进行分解成"."连接的字符串
         if (value.length == 0) {
+            //type.getSimpleName()获取类名
             String splitName = StringUtils.camelToSplitName(type.getSimpleName(), ".");
             value = new String[]{splitName};
         }
@@ -354,7 +369,8 @@ public class AdaptiveClassCodeGenerator {
                 }
             }
         }
-        
+
+        //如果没有找到URL 那么抛出异常
         // getter method not found, throw
         throw new IllegalStateException("Failed to create adaptive class for interface " + type.getName()
                         + ": not found url parameter or url attribute in parameters of method " + method.getName());

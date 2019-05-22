@@ -55,6 +55,8 @@ import static org.apache.dubbo.config.spring.util.BeanFactoryUtils.addApplicatio
 /**
  * ServiceFactoryBean
  *
+ * 暴露Service服务 继承了ServiceConfig ServiceConfig为暴露服务的主要类 通过export暴露服务
+ * @link http://dubbo.apache.org/zh-cn/docs/user/references/xml/dubbo-service.html
  * @export
  */
 public class ServiceBean<T> extends ServiceConfig<T> implements InitializingBean, DisposableBean,
@@ -105,8 +107,12 @@ public class ServiceBean<T> extends ServiceConfig<T> implements InitializingBean
         return service;
     }
 
+    //
     @Override
     public void onApplicationEvent(ContextRefreshedEvent event) {
+
+        //监控spring容器事件 将服务暴露
+        //@link http://dubbo.apache.org/zh-cn/docs/dev/design.html
         if (!isExported() && !isUnexported()) {
             if (logger.isInfoEnabled()) {
                 logger.info("The service ready on spring started. service: " + getInterface());
@@ -122,10 +128,12 @@ public class ServiceBean<T> extends ServiceConfig<T> implements InitializingBean
             Map<String, ProviderConfig> providerConfigMap = applicationContext == null ? null : BeanFactoryUtils.beansOfTypeIncludingAncestors(applicationContext, ProviderConfig.class, false, false);
             if (providerConfigMap != null && providerConfigMap.size() > 0) {
                 Map<String, ProtocolConfig> protocolConfigMap = applicationContext == null ? null : BeanFactoryUtils.beansOfTypeIncludingAncestors(applicationContext, ProtocolConfig.class, false, false);
+                //如果配置了provider 但是协议配置为空的话 那么这里就选择默认的协议
                 if (CollectionUtils.isEmptyMap(protocolConfigMap)
                         && providerConfigMap.size() > 1) { // backward compatibility
                     List<ProviderConfig> providerConfigs = new ArrayList<ProviderConfig>();
                     for (ProviderConfig config : providerConfigMap.values()) {
+                        //如果配置的是使用默认的协议
                         if (config.isDefault() != null && config.isDefault()) {
                             providerConfigs.add(config);
                         }
@@ -134,21 +142,26 @@ public class ServiceBean<T> extends ServiceConfig<T> implements InitializingBean
                         setProviders(providerConfigs);
                     }
                 } else {
+                    //如果协议存在的话
                     ProviderConfig providerConfig = null;
                     for (ProviderConfig config : providerConfigMap.values()) {
                         if (config.isDefault() == null || config.isDefault()) {
+                            //配置不能大于一份
                             if (providerConfig != null) {
                                 throw new IllegalStateException("Duplicate provider configs: " + providerConfig + " and " + config);
                             }
                             providerConfig = config;
                         }
                     }
+                    //设置provider
                     if (providerConfig != null) {
                         setProvider(providerConfig);
                     }
                 }
             }
         }
+        //如果<dubbo:application>为空 会尝试去容器中获取 后续在ServiceConfig获取application的时候如果发现
+        //如果空的话 将会初始化一个
         if (getApplication() == null
                 && (getProvider() == null || getProvider().getApplication() == null)) {
             Map<String, ApplicationConfig> applicationConfigMap = applicationContext == null ? null : BeanFactoryUtils.beansOfTypeIncludingAncestors(applicationContext, ApplicationConfig.class, false, false);
@@ -165,6 +178,8 @@ public class ServiceBean<T> extends ServiceConfig<T> implements InitializingBean
                 }
             }
         }
+
+        //module 模块 策略同上
         if (getModule() == null
                 && (getProvider() == null || getProvider().getModule() == null)) {
             Map<String, ModuleConfig> moduleConfigMap = applicationContext == null ? null : BeanFactoryUtils.beansOfTypeIncludingAncestors(applicationContext, ModuleConfig.class, false, false);
@@ -184,6 +199,7 @@ public class ServiceBean<T> extends ServiceConfig<T> implements InitializingBean
             }
         }
 
+        //注册ID
         if (StringUtils.isEmpty(getRegistryIds())) {
             if (getApplication() != null && StringUtils.isNotEmpty(getApplication().getRegistryIds())) {
                 setRegistryIds(getApplication().getRegistryIds());
@@ -193,6 +209,7 @@ public class ServiceBean<T> extends ServiceConfig<T> implements InitializingBean
             }
         }
 
+        //这里找注册中心
         if ((CollectionUtils.isEmpty(getRegistries()))
                 && (getProvider() == null || CollectionUtils.isEmpty(getProvider().getRegistries()))
                 && (getApplication() == null || CollectionUtils.isEmpty(getApplication().getRegistries()))) {
@@ -215,6 +232,7 @@ public class ServiceBean<T> extends ServiceConfig<T> implements InitializingBean
                     }
                 }
                 if (!registryConfigs.isEmpty()) {
+                    //添加注册中心
                     super.setRegistries(registryConfigs);
                 }
             }
@@ -237,6 +255,7 @@ public class ServiceBean<T> extends ServiceConfig<T> implements InitializingBean
             }
         }
 
+        //监控配置
         if (getMonitor() == null
                 && (getProvider() == null || getProvider().getMonitor() == null)
                 && (getApplication() == null || getApplication().getMonitor() == null)) {
@@ -257,6 +276,8 @@ public class ServiceBean<T> extends ServiceConfig<T> implements InitializingBean
             }
         }
 
+
+        //TODO ？
         if (getMetrics() == null) {
             Map<String, MetricsConfig> metricsConfigMap = applicationContext == null ? null : BeanFactoryUtils.beansOfTypeIncludingAncestors(applicationContext, MetricsConfig.class, false, false);
             if (metricsConfigMap != null && metricsConfigMap.size() > 0) {
@@ -313,6 +334,8 @@ public class ServiceBean<T> extends ServiceConfig<T> implements InitializingBean
                 setPath(beanName);
             }
         }
+        //如果不支持spring事件监听的话 那么直接调用export()进行注册
+        //如果支持的话 那么监听初始化事件 org.apache.dubbo.config.spring.ServiceBean.export
         if (!supportedApplicationListener) {
             export();
         }
@@ -334,6 +357,7 @@ public class ServiceBean<T> extends ServiceConfig<T> implements InitializingBean
     @Override
     public void export() {
         super.export();
+        //export事件
         // Publish ServiceBeanExportedEvent
         publishExportEvent();
     }
@@ -342,6 +366,7 @@ public class ServiceBean<T> extends ServiceConfig<T> implements InitializingBean
      * @since 2.6.5
      */
     private void publishExportEvent() {
+        //发布export事件
         ServiceBeanExportedEvent exportEvent = new ServiceBeanExportedEvent(this);
         applicationEventPublisher.publishEvent(exportEvent);
     }

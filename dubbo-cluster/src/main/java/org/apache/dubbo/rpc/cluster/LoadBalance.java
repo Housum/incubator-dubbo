@@ -32,12 +32,16 @@ import java.util.List;
  * <a href="http://en.wikipedia.org/wiki/Load_balancing_(computing)">Load-Balancing</a>
  *
  * @see org.apache.dubbo.rpc.cluster.Cluster#join(Directory)
+ * <p>
+ * 负载均衡加载机器 默认实现为随机选择
  */
 @SPI(RandomLoadBalance.NAME)
 public interface LoadBalance {
 
     /**
      * select one invoker in list.
+     * <p>
+     * 使用负载均衡 从列表中加载一个服务
      *
      * @param invokers   invokers.
      * @param url        refer url

@@ -114,6 +114,8 @@ public class ReferenceConfig<T> extends AbstractReferenceConfig {
     private String client;
 
     /**
+     *
+     * 设置点对点
      * The url for peer-to-peer invocation
      */
     private String url;

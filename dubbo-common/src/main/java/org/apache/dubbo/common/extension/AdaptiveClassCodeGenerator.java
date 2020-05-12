@@ -223,15 +223,16 @@ public class AdaptiveClassCodeGenerator {
 
             //检查是否有org.apache.dubbo.rpc.Invocation参数
             boolean hasInvocation = hasInvocationArgument(method);
-            
+
             code.append(generateInvocationArgumentNullCheck(method));
-            
+            //这部分生成的代码就是 String extName = URL.getParameter("protocol")
             code.append(generateExtNameAssignment(value, hasInvocation));
             // check extName == null?
             code.append(generateExtNameNullCheck(value));
-            
+            //这部分就是 instance = T.getExtensionLoader(T.class).getExtension(extName)
             code.append(generateExtensionAssignment());
 
+            //instance执行的真实方法
             // return statement
             code.append(generateReturnAndInovation(method));
         }

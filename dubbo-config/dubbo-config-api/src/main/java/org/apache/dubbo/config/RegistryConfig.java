@@ -27,6 +27,8 @@ import java.util.Map;
  *
  * 形如:<dubbo:registry address="zookeeper://127.0.0.1:2181"/> 标签
  *
+ * 注册中心
+ *
  * @export
  * @link http://dubbo.apache.org/zh-cn/docs/user/references/xml/dubbo-registry.html
  */

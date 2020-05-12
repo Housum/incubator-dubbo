@@ -20,6 +20,7 @@
 package org.apache.dubbo.demo.consumer.comp;
 
 import org.apache.dubbo.config.annotation.Reference;
+import org.apache.dubbo.demo.ByteObjects;
 import org.apache.dubbo.demo.DemoService;
 
 import org.springframework.stereotype.Component;
@@ -28,6 +29,11 @@ import org.springframework.stereotype.Component;
 public class DemoServiceComponent implements DemoService {
     @Reference
     private DemoService demoService;
+
+    @Override
+    public ByteObjects testByte() {
+        return null;
+    }
 
     @Override
     public String sayHello(String name) {

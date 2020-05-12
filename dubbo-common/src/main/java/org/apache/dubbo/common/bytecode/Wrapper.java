@@ -133,8 +133,10 @@ public abstract class Wrapper {
         ClassLoader cl = ClassHelper.getClassLoader(c);
 
         //三个方法 设置属性 获取属性 调用指定方法
+        //第一个是对象 第一个参数名 第三个具体的值
         StringBuilder c1 = new StringBuilder("public void setPropertyValue(Object o, String n, Object v){ ");
         StringBuilder c2 = new StringBuilder("public Object getPropertyValue(Object o, String n){ ");
+        //四个参数 第一个参数是对象 第二个方法名 第三个是类型参数数组 第四个是参数列表
         StringBuilder c3 = new StringBuilder("public Object invokeMethod(Object o, String n, Class[] p, Object[] v) throws " + InvocationTargetException.class.getName() + "{ ");
 
         //将传入的参数进行强转为"name"类型 如果强转失败的话  那么抛出IllegalArgumentException异常

@@ -48,6 +48,7 @@ public class ConsistentHashLoadBalance extends AbstractLoadBalance {
         String methodName = RpcUtils.getMethodName(invocation);
         String key = invokers.get(0).getUrl().getServiceKey() + "." + methodName;
         int identityHashCode = System.identityHashCode(invokers);
+        //针对于每一个方法来说 是一个环
         ConsistentHashSelector<T> selector = (ConsistentHashSelector<T>) selectors.get(key);
         if (selector == null || selector.identityHashCode != identityHashCode) {
             selectors.put(key, new ConsistentHashSelector<T>(invokers, methodName, identityHashCode));

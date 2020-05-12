@@ -28,6 +28,9 @@ import org.apache.dubbo.remoting.transport.DecodeHandler;
 /**
  * DefaultMessenger
  * exchange层 头部消息格式编码 对外暴露的是这一层,protocol -> exchange -> transport
+ *
+ * 这一层的作用 同步转异步
+ *
  */
 public class HeaderExchanger implements Exchanger {
 
@@ -43,7 +46,7 @@ public class HeaderExchanger implements Exchanger {
 
     @Override
     public ExchangeServer bind(URL url, ExchangeHandler handler) throws RemotingException {
-        //transport层 打开一个service
+        //transport层 打开一个service 其中关联的是Transporter层的东西
         return new HeaderExchangeServer(Transporters.bind(url, new DecodeHandler(new HeaderExchangeHandler(handler))));
     }
 

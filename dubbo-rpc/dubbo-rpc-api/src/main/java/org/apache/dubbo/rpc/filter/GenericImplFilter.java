@@ -43,6 +43,7 @@ import java.lang.reflect.Method;
  * GenericImplInvokerFilter
  * 对于范型服务的处理
  *
+ * https://www.cnblogs.com/notlate/p/10127942.html
  */
 @Activate(group = Constants.CONSUMER, value = Constants.GENERIC_KEY, order = 20000)
 public class GenericImplFilter implements Filter {
@@ -53,7 +54,11 @@ public class GenericImplFilter implements Filter {
 
     @Override
     public Result invoke(Invoker<?> invoker, Invocation invocation) throws RpcException {
+
+        //是否是打标了
         String generic = invoker.getUrl().getParameter(Constants.GENERIC_KEY);
+
+        //org.apache.dubbo.config.ServiceConfig.doExportUrlsFor1Protocol 中有设置
 
         //将请求服务进行改写
         if (ProtocolUtils.isGeneric(generic)
@@ -81,6 +86,7 @@ public class GenericImplFilter implements Filter {
 
             invocation2.setMethodName(Constants.$INVOKE);
             invocation2.setParameterTypes(GENERIC_PARAMETER_TYPES);
+            //这里将参数设置为三个 分别是方法名 参数类型 参数值
             invocation2.setArguments(new Object[]{methodName, types, args});
             Result result = invoker.invoke(invocation2);
 

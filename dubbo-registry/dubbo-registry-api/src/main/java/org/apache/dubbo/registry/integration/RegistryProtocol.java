@@ -180,7 +180,7 @@ public class RegistryProtocol implements Protocol {
         //获取注册地址 其中保存了具体注册中心协议
         URL registryUrl = getRegistryUrl(originInvoker);
         // url to export locally
-        //暴露服务的地址
+        //暴露服务的地址 其中保存了服务的ip等信息
         URL providerUrl = getProviderUrl(originInvoker);
 
         // Subscribe the override data
@@ -303,6 +303,7 @@ public class RegistryProtocol implements Protocol {
     private URL getRegistryUrl(Invoker<?> originInvoker) {
         URL registryUrl = originInvoker.getUrl();
 
+        //这一层是注册中心的协议 比如zookeeper etcd等等
         //assert register
         if (REGISTRY_PROTOCOL.equals(registryUrl.getProtocol())) {
             //TODO 默认dubbo找到的注册是中心工厂类 org.apache.dubbo.registry.dubbo.DubboRegistryFactory

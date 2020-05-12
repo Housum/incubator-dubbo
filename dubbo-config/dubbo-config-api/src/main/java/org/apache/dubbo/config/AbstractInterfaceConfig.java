@@ -315,6 +315,7 @@ public abstract class AbstractInterfaceConfig extends AbstractMethodConfig {
                     //协议 如果从application和config没有获取到应用层协议 那么默认设置的协议是dubbo协议 这里存储的是rpc使用的协议
                     //即配置中的protocol @link http://dubbo.apache.org/zh-cn/docs/user/references/protocol/introduction.html
                     if (!map.containsKey(Constants.PROTOCOL_KEY)) {
+                        //RPC协议
                         map.put(Constants.PROTOCOL_KEY, Constants.DUBBO_PROTOCOL);
                     }
                     //将地址解析成URL
@@ -325,6 +326,7 @@ public abstract class AbstractInterfaceConfig extends AbstractMethodConfig {
                         url = URLBuilder.from(url)
                                 //这里的url.getProtocol()获取的是URL的协议 注意这里和<dubbo:protocol>中的
                                 //协议指的不是一个东西 <dubbo:protocol>指的是RPC通信协议(dubbo,http等应用层协议)
+                                //这里指的是注册中心
                                 .addParameter(Constants.REGISTRY_KEY, url.getProtocol())
                                 //这里设置protocol是为了在后面执行org.apache.dubbo.rpc.Protocol.export 找到指定的RegistryProtocol
                                 .setProtocol(Constants.REGISTRY_PROTOCOL)
@@ -515,6 +517,7 @@ public abstract class AbstractInterfaceConfig extends AbstractMethodConfig {
                     ReflectUtils.forName(interfaceClass.getName() + "Local") : ReflectUtils.forName(local);
             verify(interfaceClass, localClass);
         }
+        //对于stub来说 必须提供一个设置远程对象的构造函数
         if (ConfigUtils.isNotEmpty(stub)) {
             Class<?> localClass = ConfigUtils.isDefault(stub) ?
                     ReflectUtils.forName(interfaceClass.getName() + "Stub") : ReflectUtils.forName(stub);

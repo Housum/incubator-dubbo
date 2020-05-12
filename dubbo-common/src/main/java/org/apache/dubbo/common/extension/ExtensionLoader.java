@@ -48,6 +48,9 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.regex.Pattern;
 
 /**
+ *
+ * 加载dubbo扩展
+ *
  * Load dubbo extensions
  * <ul>
  * <li>auto inject dependency extension </li>
@@ -95,6 +98,8 @@ public class ExtensionLoader<T> {
     private final ConcurrentMap<String, Holder<Object>> cachedInstances = new ConcurrentHashMap<>();
     private final Holder<Object> cachedAdaptiveInstance = new Holder<>();
     private volatile Class<?> cachedAdaptiveClass = null;
+
+    //默认的名称 注解在类上面的SPI中指定的 @SPI("dubbo")默认的就是
     private String cachedDefaultName;
     private volatile Throwable createAdaptiveInstanceError;
 
@@ -749,7 +754,10 @@ public class ExtensionLoader<T> {
         if (clazz.isAnnotationPresent(Adaptive.class)) {
             cacheAdaptiveClass(clazz);
         } else if (isWrapperClass(clazz)) {
-            //是否是一个装饰类
+            //这里检查是否是Wrapper类 就是装饰其他类的类 如果是的话 那么就能够代理真实的对象
+            //典型的dubbo的filter就是这么实现的
+            //META-INF/dubbo/internal/org.apache.dubbo.rpc.Protocol 在这其中
+            //ProtocolFilterWrapper 就是Protocol的代理类 在后面获取类的是时候 返回的其实是装饰类
             cacheWrapperClass(clazz);
         } else {
             clazz.getConstructor();

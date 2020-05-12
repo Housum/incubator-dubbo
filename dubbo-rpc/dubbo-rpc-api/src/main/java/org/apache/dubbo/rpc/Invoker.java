@@ -41,7 +41,7 @@ public interface Invoker<T> extends Node {
      * invoke.
      * 调用执行方法
      *
-     * @param invocation 会话域 保存了执行的信息 比如方法名,参数
+     * @param invocation 会话域 保存了执行的信息 比如方法名称 方法的参数数组 方法的参数值列表
      * @return result 执行结果
      * @throws RpcException
      */

@@ -48,7 +48,8 @@ public class JavassistProxyFactory extends AbstractProxyFactory {
             protected Object doInvoke(T proxy, String methodName,
                                       Class<?>[] parameterTypes,
                                       Object[] arguments) throws Throwable {
-                //这里执行的是T的具体的方法
+                //对于Wrapper成功代理类 在ServiceConfig中有过讲解 这里其实就是封装一个统=统一的代理类 执行的时候只需要传入
+                //真实的对象 方法名 参数类型数组以及参数数组 其中就会调用真实方法 这其中用的是反射
                 return wrapper.invokeMethod(proxy, methodName, parameterTypes, arguments);
             }
         };

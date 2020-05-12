@@ -19,22 +19,46 @@
 package org.apache.dubbo.demo.consumer;
 
 import org.apache.dubbo.config.ApplicationConfig;
+import org.apache.dubbo.config.ProtocolConfig;
 import org.apache.dubbo.config.ReferenceConfig;
 import org.apache.dubbo.config.RegistryConfig;
+import org.apache.dubbo.demo.ByteObjects;
 import org.apache.dubbo.demo.DemoService;
+
+import java.util.Base64;
+import java.util.concurrent.Executor;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 public class Application {
     /**
      * In order to make sure multicast registry works, need to specify '-Djava.net.preferIPv4Stack=true' before
      * launch the application
      */
+
+
+
     public static void main(String[] args) {
         ReferenceConfig<DemoService> reference = new ReferenceConfig<>();
         reference.setApplication(new ApplicationConfig("dubbo-demo-api-consumer"));
-        reference.setRegistry(new RegistryConfig("multicast://224.5.6.7:1234"));
+        reference.setRegistry(new RegistryConfig("zookeeper://127.0.0.1:2181"));
         reference.setInterface(DemoService.class);
+        reference.setProtocol("dubbo");
+        reference.setTimeout(20000);
         DemoService service = reference.get();
-        String message = service.sayHello("dubbo");
-        System.out.println(message);
+//        String message = service.sayHello("dubbo");
+//        System.out.println(message);
+        ExecutorService executorService = Executors.newFixedThreadPool(8);
+        Base64.Decoder decoder = Base64.getDecoder();
+        while (true) {
+            executorService.execute(() -> {
+                long startTime = System.currentTimeMillis();
+                ByteObjects byteObjects = service.testByte();
+                for (byte[] bytes:byteObjects.getByteList()){
+                    decoder.decode(bytes);
+                }
+                System.out.println((System.currentTimeMillis() - startTime) / 1000);
+            });
+        }
     }
 }
